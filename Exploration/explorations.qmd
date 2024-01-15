@@ -33,7 +33,6 @@ output:
 header-includes: 
   - \usepackage{mathtools}
   - \usepackage[left]{lineno}
- # - \usepackage{tabularx}
   - \linenumbers
   - \usepackage[a4paper, total={6in, 10in}]{geometry}
   - \usepackage{longtable}
@@ -103,11 +102,11 @@ colnames(Example1)
 
 I would love to have the meaning of the column names to make meaning of the data. I am only guessing, but my guesses may be wrong. I think:
 
-* `dato` - Date data was collected. The date is between 01.07.2007 to 01.08.2008.
+-   `dato` - Date data was collected. The date is between 01.07.2007 to 01.08.2008.
 
-* `Juli` - July, but it has different codes. What do they mean?
+-   `Juli` - July, but it has different codes. What do they mean?
 
-Most of the column names are abbrevations. 
+Most of the column names are abbrevations.
 
 Looking at the dataset and the summary, is it safe to say this is a data with presence of multiple species (hopefully at a given location, but I cannot find a location name, lake name or ID). This is because I could not find the counts of the fishes at the lake. If the data is for each lake or location, the absences can also be inferred.
 
