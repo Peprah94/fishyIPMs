@@ -97,6 +97,11 @@ indData <- indData[complete.cases(indData[, c("maturationStage", "maturation")])
 catchmentVars <- read_csv("dataset/NO_all_vars_over_catchments.csv")
 colnames(catchmentVars)  
 
+lakeNames <- read_delim("dataset/lakes_used_for_model_prep.csv", 
+                        delim = ";", 
+                        escape_double = FALSE, 
+                        trim_ws = TRUE)
+
 
 # get age-at-harvest data
 # goal is to get the number of individuals harvested at for each age, per year, sex and lake number
@@ -108,24 +113,38 @@ ageAtHarvestData <- dcast(indData,
                           value.var = "presence",
                           fun.aggregate = sum)%>%
   left_join(., indData, 
-             by = c("yearGrowthOcc", "sex", "lakeName"),
-             keep = FALSE,
-             multiple = "first")
+            by = c("yearGrowthOcc", "sex", "lakeName"),
+            keep = FALSE,
+            multiple = "first")
+
+
 
 # Now I get the data to model sprawning
 # Use the idea in Magnus et.al 2021
 #Select females and use the maturation variable (0/1) to model the sprawning probability
-sprawningData <- ageAtHarvestData%>%
-  #dplyr::filter(sex == 1)%>% #  I assume 1 is female
-dplyr::mutate(maturation = ifelse(sex == 2, 0, maturation))
+index <- function(x) {ifelse(x > 0, 1, 0)}
+
+sprawningAtHarvestData <- indData %>%
+  dplyr::mutate(maturation = ifelse(sex == 1, 0, maturation))%>% # I assume 1 is males
+  dcast(., 
+        yearGrowthOcc + sex + lakeName ~ ageAtYr, 
+        value.var = "maturation",
+        fun.aggregate = sum)%>%
+  left_join(., indData, 
+            by = c("yearGrowthOcc", "sex", "lakeName"),
+            keep = FALSE,
+            multiple = "first")
 
 # I intend to use the stock recruitment function.
 # however, I don't have access to the number of eggs
 
+
+# Catchment variables
+
 #save data to use in fitting the models
 
 dataList <- list(ageAtHarvestData = ageAtHarvestData,
-                 sprawningData = sprawningData,
+                 sprawningData = sprawningAtHarvestData,
                  indData = indData,
                  popnData = popnData)
   

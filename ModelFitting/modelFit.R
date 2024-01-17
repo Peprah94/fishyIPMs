@@ -27,9 +27,16 @@ code <- nimbleCode({
     bs[i] ~ dnorm(0, sd=100)
   }
   sdbs ~dunif(0.01, 100)
+  sdbsAge ~dunif(0.01, 100)
   #treat sex as a factor in the sprawing probability  
   for(i in 1:2){
-    bsSex[i] ~ dnorm(0, sd=sdbs)}
+    bsSex[i] ~ dnorm(0, sd=sdbs)
+  }
+  
+  #treat each stage/age category as a factor for the spawning probability
+  for(age in 1:maxAge){
+    bsAge[age] ~ dnorm(0, sd=sdbsAge)
+  }
   
   #variable selection Probability
   for(k in 1:5){
@@ -39,17 +46,21 @@ code <- nimbleCode({
 
   # Sprawning probability
   for(ind in 1:nInds){
-    logit(sprawnProb[ind]) <- bs[1] + psibs[1]*bs[2]*ageAtYear[ind] +  psibs[2]*bs[3]*lengthAtAgeThisYear[ind]  + psibs[3]*bs[3]*ageAtYear[ind]*lengthAtAgeThisYear[ind] + psibs[4]*bs[4]*CPUE[ind] +psibs[5]* bsSex[sex[ind]]
+    for(age in 1:maxAge){ #loop through the age
+    logit(sprawnProb[ind, age]) <- bs[1] + bsAge[age] + psibs[1]*bs[2]*ageAtYear[ind] +  psibs[2]*bs[3]*lengthAtAgeThisYear[ind]  + psibs[3]*bs[3]*ageAtYear[ind]*lengthAtAgeThisYear[ind] + psibs[4]*bs[4]*CPUE[ind] +psibs[5]* bsSex[sex[ind]]
+    }
   }
   
   for(ind in 1:nInds){
-    sprawns[ind] ~ dbern(sprawnProb[ind])
-  }
+    for(age in 1:maxAge){ #loop through the age
+    sprawns[ind, age] ~ dbern(sprawnProb[ind, age])
+    }
+}
   
 # Fecundicity
   for(ind in 1:nInds){
     for(age in 1:maxAge){ #loop through the age
-    fecundicity[ind, age] <- exp(log(lengthAtAgeThisYear[ind])*2.21 - 6.15) * sprawnProb[ind]
+    fecundicity[ind, age] <- exp(log(lengthAtAgeThisYear[ind])*2.21 - 6.15) * sprawnProb[ind, age]
     }
   }
  
@@ -81,9 +92,9 @@ code <- nimbleCode({
     Amat[1,1 ,ind] <-  fecundicity[ind, 1]*survivalProb[ind, 1]
     for(age in 2:maxAge){ #loop through the age
     Amat[1,age ,ind] <-  fecundicity[ind, age]*survivalProb[ind, 1]
-    Amat[age,(age-1),ind] <-  survivalProb[ind, (age-1)]
+    Amat[age,(age-1),ind] <-  survivalProb[ind, age]
     }
-    Amat[maxAge, maxAge, ind] <- survivalProb[maxAge, maxAge-1]
+    Amat[maxAge, maxAge, ind] <- survivalProb[maxAge, maxAge]
 #  }
 
 # Define population size
@@ -145,13 +156,17 @@ code <- nimbleCode({
 
 
 # Data for model
+
+sprawnsData <- apply(dataList$sprawningData[, 4:13], c(1,2), function(x) ifelse(x>0, 1, 0))
+
 data = list(
-  sprawns = as.numeric(dataList$sprawningData$maturation),
+  #sprawns = as.numeric(dataList$sprawningData$maturation),
+  sprawns = sprawnsData,
   ageAtYear = as.numeric(dataList$sprawningData$ageAtYr),
   lengthAtAgeThisYear = as.numeric(dataList$sprawningData$legthAtAgeThisYear),
   CPUE = as.numeric(dataList$sprawningData$capturePerUnitEffort),
   yearGrowthOcc = as.numeric(as.factor(dataList$ageAtHarvestData$yearGrowthOcc)),
-  y = as.matrix(dataList$ageAtHarvestData[4: 13]),
+  y = as.matrix(dataList$ageAtHarvestData[ ,4: 13]),
   harvestCount = rowSums(as.matrix(dataList$ageAtHarvestData[4: 13]))
 )
 
@@ -160,13 +175,15 @@ constants = list(
   sex = as.numeric(dataList$sprawningData$sex),
   maxAge = 10,
   Nst = rep(3, 10),
-  T = 5,
-  u = 2 # cut off year from the prediction of population size used to estimate popn growth rate
+  T = 100,
+  u = 80 # cut off year from the prediction of population size used to estimate popn growth rate
 )
 
 inits <- list(
   bs = rnorm(4, 0, 1),
   bsSex = rnorm(2, 0, 1),
+  bsAge = rnorm(constants$maxAge, 0, 1),
+  sdbsAge =1,
   sdbs = 1,
   psibs = rep(0.5, 5),
   bsurv = rnorm(2, 0, 1),
@@ -192,7 +209,9 @@ fishModelCompiled <- compileNimble(fishModel)
 # Configure fishModel
 fishModelConfigured <- configureMCMC(fishModelCompiled,
                                      monitors = c("bs", "psibs", "sdbs",
-                                                  "bsurvAge", "bsurv")
+                                                  "bsSex",
+                                                  "bsurvAge", "bsurv",
+                                                  "sdbsAge", "bsAge")
 )
 
 
@@ -206,9 +225,9 @@ fishModelCompiled2 <- compileNimble(fishModelBuilt,
 
 #run MCMC
 fishModelMCMCrun <- runMCMC(fishModelCompiled2,
-                            niter = 1000,
+                            niter = 50000,
                             nchains = 2,
-                            nburnin = 100,
+                            nburnin = 10000,
                             setSeed = TRUE,
                             samples = TRUE,
                             samplesAsCodaMCMC = TRUE,
