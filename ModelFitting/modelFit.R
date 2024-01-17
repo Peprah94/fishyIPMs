@@ -13,6 +13,20 @@ library(dplyr)
 library(readr)
 library(reshape2)
 
+# Write nimble Function to calculate eigen values and extract the maximum
+lambdaEstimation <- function(x){
+  ret <- max(Re(eigen(x)$values))
+  return(ret)
+}
+
+nimbleLambdaEstimation <- nimble::nimbleRcall(
+  prototype = function(x = double(2)){},
+  returnType = double(0),
+  Rfun = 'lambdaEstimation'
+)
+
+#nimbleLambdaEstimation(fishModelCompiled$Amat[,,1])
+
 
 # start writing the nimble code to fit the model
 
@@ -24,10 +38,10 @@ code <- nimbleCode({
   ## Prior distributions
   #covariate effect
   for(i in 1:4){
-    bs[i] ~ dnorm(0, sd=100)
+    bs[i] ~ dnorm(0, sd=10)
   }
-  sdbs ~dunif(0.01, 100)
-  sdbsAge ~dunif(0.01, 100)
+  sdbs ~dunif(0.01, 10)
+  sdbsAge ~dunif(0.01, 10)
   #treat sex as a factor in the sprawing probability  
   for(i in 1:2){
     bsSex[i] ~ dnorm(0, sd=sdbs)
@@ -70,18 +84,24 @@ code <- nimbleCode({
  #prior distributions
 
   for(i in 1:2){
-    bsurv[i] ~dnorm(0, sd = 100)
+    bsurv[i] ~dnorm(0, sd = 10)
   }
   
-  sdSurvAge ~dunif(0.01, 100)
+  sdSurvAge ~ dunif(0.01, 10)
+  sdLake ~ dunif(0.01, 10)
   
   for(i in 1:maxAge){
     bsurvAge[i]~dnorm(0, sd = sdSurvAge)
   }
   
+  #lake effect
+  for(i in 1:nLakes){
+   bsLake[i] ~dnorm(0, sd = sdLake)
+  }
+  
   for(ind in 1:nInds){
     for(age in 1:maxAge){ #loop through the age
- logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurv[2]* yearGrowthOcc[ind]     
+ logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurv[2]* yearGrowthOcc[ind] + bsLake[lake[ind]]  
     }
   }
   
@@ -98,22 +118,21 @@ code <- nimbleCode({
 #  }
 
 # Define population size
-
   #  for(ind in 1:nInds){
-      N[1:maxAge, 1, ind] <- Nst[1:maxAge]
-      for(t in 2:T){    
+   #   N[1:maxAge, 1, ind] <- Nst[1:maxAge]
+   #   for(t in 2:T){    
     #Population projection
-    N[1:maxAge, t, ind] <- Amat[1:maxAge, 1:maxAge,ind]%*%N[1:maxAge, t-1, ind]
+  #  N[1:maxAge, t, ind] <- Amat[1:maxAge, 1:maxAge,ind]%*%N[1:maxAge, t-1, ind]
     
     #annual growth rate on log-scale
-    r.annual[t, ind] <- log(sum(N[1:maxAge, t, ind])) - log(sum(N[1:maxAge, t-1, ind]))
+   # r.annual[t, ind] <- log(sum(N[1:maxAge, t, ind])) - log(sum(N[1:maxAge, t-1, ind]))
   }
-  } 
+  #} 
   
   # Growth rate (lambda) for each individual
   for(ind in 1:nInds){
-   lambda[ind] <- exp(mean(r.annual[u:T, ind])) 
-  
+   #lambda[ind] <- exp(mean(r.annual[u:T, ind])) 
+    lambda[ind] <- nimbleLambdaEstimation(Amat[1:maxAge, 1:maxAge, ind])
     # Proportion of stable distribution
    # check skelly et. al (2023) page 1066 for equations
    
@@ -122,7 +141,7 @@ code <- nimbleCode({
    # g = probability of surving to the next stage class
    w[ind, 1] <- 1 
    g[ind, 1] <- Amat[1,1,ind]
-   g[ind, maxAge] <- 0.0000001
+   g[ind, maxAge] <- 0
    z[ind, 1] <- 0
    z[ind, maxAge] <- Amat[maxAge,maxAge - 1,ind]
    for(age in 2:(maxAge-1)){
@@ -137,10 +156,10 @@ code <- nimbleCode({
    
  
   #expected counts in each stage class
-  for(age in 2:(maxAge-1)){
+  for(age in 2:(maxAge)){
     ey[ind, age] <- g[ind, age-1]*C[ind, age-1] + z[ind, age]*C[ind, age]
   }
-  ey[ind, maxAge] <- g[ind, maxAge-1]*C[ind, maxAge-1] + survivalProb[ind, maxAge]*C[ind, maxAge]
+  #ey[ind, maxAge] <- g[ind, maxAge-1]*C[ind, maxAge-1] + survivalProb[ind, maxAge]*C[ind, maxAge]
   ey[ind, 1] <- (lambda[ind] - sum(ey[ind, 2:maxAge]))
   
   
@@ -173,6 +192,8 @@ data = list(
 constants = list(
   nInds = nrow(dataList$ageAtHarvestData),
   sex = as.numeric(dataList$sprawningData$sex),
+  lake = as.numeric(as.factor(dataList$ageAtHarvestData$lakeName)),
+  nLakes = length(unique(as.numeric(as.factor(dataList$ageAtHarvestData$lakeName)))),
   maxAge = 10,
   Nst = rep(3, 10),
   T = 100,
@@ -184,6 +205,8 @@ inits <- list(
   bsSex = rnorm(2, 0, 1),
   bsAge = rnorm(constants$maxAge, 0, 1),
   sdbsAge =1,
+  sdLake = 1,
+  bsLake = rnorm(constants$nLakes, 0, 1),
   sdbs = 1,
   psibs = rep(0.5, 5),
   bsurv = rnorm(2, 0, 1),
@@ -205,13 +228,16 @@ fishModel <- nimbleModel(code,
 # compile nimbleModel
 fishModelCompiled <- compileNimble(fishModel)
 
+# check if any lambda is 0
+which(fishModelCompiled$lambda == 0)
 
 # Configure fishModel
 fishModelConfigured <- configureMCMC(fishModelCompiled,
                                      monitors = c("bs", "psibs", "sdbs",
                                                   "bsSex",
                                                   "bsurvAge", "bsurv",
-                                                  "sdbsAge", "bsAge")
+                                                  "sdbsAge", "bsAge",
+                                                  "lambda")
 )
 
 
@@ -225,9 +251,9 @@ fishModelCompiled2 <- compileNimble(fishModelBuilt,
 
 #run MCMC
 fishModelMCMCrun <- runMCMC(fishModelCompiled2,
-                            niter = 50000,
+                            niter = 10000,
                             nchains = 2,
-                            nburnin = 10000,
+                            nburnin = 2000,
                             setSeed = TRUE,
                             samples = TRUE,
                             samplesAsCodaMCMC = TRUE,
