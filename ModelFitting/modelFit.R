@@ -251,9 +251,9 @@ fishModelCompiled2 <- compileNimble(fishModelBuilt,
 
 #run MCMC
 fishModelMCMCrun <- runMCMC(fishModelCompiled2,
-                            niter = 10000,
+                            niter = 1000,
                             nchains = 2,
-                            nburnin = 2000,
+                            nburnin = 200,
                             setSeed = TRUE,
                             samples = TRUE,
                             samplesAsCodaMCMC = TRUE,
