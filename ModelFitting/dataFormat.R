@@ -172,3 +172,13 @@ dataList <- list(ageAtHarvestData = ageAtHarvestData,
   
 save(dataList, 
      file = "dataset/formattedDataList.RData")
+
+# check the catchment variables and correlation with other variables
+
+#lengthAtAgeThisYear
+GGally::ggpairs(ageAtHarvestData[, c(1:3, 15, 36:45)])
+
+# Catchment variables
+GGally::ggpairs(ageAtHarvestData[, c(53:68)])
+
+

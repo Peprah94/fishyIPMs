@@ -1,0 +1,447 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else  
+    % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\setcounter{secnumdepth}{5}
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+\usepackage[noblocks]{authblk}
+\renewcommand*{\Authsep}{, }
+\renewcommand*{\Authand}{, }
+\renewcommand*{\Authands}{, }
+\renewcommand\Affilfont{\small}
+\usepackage{mathtools}
+\usepackage[left]{lineno}
+\linenumbers
+\usepackage[a4paper, total={6in, 10in}]{geometry}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{multirow}
+\usepackage{setspace}\doublespacing
+\renewcommand{\abstractname}{Summary}
+\usepackage{bm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{rotating}
+\usepackage{array}
+\usepackage{doi}
+\usepackage[sort, round]{natbib}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{comment}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes,decorations,arrows,calc,arrows.meta,fit,positioning}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
+\makeatother
+\makeatletter
+\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage[]{natbib}
+\bibliographystyle{plainnat}
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Documentation},
+  pdfauthor={Kwaku Peprah Adjei},
+  colorlinks=true,
+  linkcolor={black},
+  filecolor={Maroon},
+  citecolor={black},
+  urlcolor={black},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Documentation}
+\author{Kwaku Peprah Adjei}
+\date{}
+
+\begin{document}
+\maketitle
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[sharp corners, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, frame hidden, enhanced, breakable, interior hidden]}{\end{tcolorbox}}\fi
+
+This document provides a walk-through on the model fitted for the
+freshRestore project. The document begins with the objectives for the
+modelling, dataset and covariates used and some results obtained.
+
+\hypertarget{objectives}{%
+\section{Objectives}\label{objectives}}
+
+\begin{itemize}
+\item
+  Fit a population dynamic model (IPMs) with anthropogenic drivers
+  \citep[human driven factors such as climate change, direct exploitation, pollution, biological invasions, sea-use change; ][]{moullec2021identifying}.
+\item
+  The IPM should be a mechanistic model
+  \citep[plug and play;][]{frost2023integrated, smallegange2017mechanistic}.
+  The IPMs should describe how the variables affect population.
+\item
+  IPMs should model temporal trends in human characteristics using
+  variables that indicate catchment state of each year and a continuous
+  time series data.
+\item
+  Produce prediction maps (of what?)
+\end{itemize}
+
+\hypertarget{example-dataset-received}{%
+\section{Example dataset received}\label{example-dataset-received}}
+
+I have received three files which are located
+\href{https://github.com/Peprah94/fishyIPMs/tree/main/dataset}{here} in
+the \href{https://github.com/Peprah94/fishyIPMs/tree/main}{gitHub
+repository}:
+
+\begin{itemize}
+\item
+  \emph{Example1.csv} : This file contains fish population data across
+  lakes in Norway. The description of the column names in this file can
+  be found
+  \href{https://github.com/Peprah94/fishyIPMs/blob/main/dataset/Variable\%20description.docx}{here}.
+\item
+  \emph{Example2\_vatnLnr.csv} : This file contains a individual fish
+  data of the population harvested. The description of the column names
+  in this file can be found
+  \href{https://github.com/Peprah94/fishyIPMs/blob/main/dataset/Variable\%20description.docx}{here}.
+\item
+  \emph{model\_catchment\_vars.csv} : This file contains the catchment
+  variables for all the lakes. The description of the variables can be
+  found
+  \href{https://github.com/Peprah94/fishyIPMs/blob/main/meetingScripts/Description\%20of\%20catchment\%20variables\%20.pdf}{here}.
+\end{itemize}
+
+\hypertarget{data-format-and-exploration}{%
+\section{Data format and
+exploration}\label{data-format-and-exploration}}
+
+The individual fish data was formatted into an age at harvest format
+with their \textbf{lake}, \textbf{sex} and \textbf{year growth occurred}
+as variables to widen the long-format dataset received.
+
+\hypertarget{catchment-variables}{%
+\subsection{Catchment Variables}\label{catchment-variables}}
+
+\begin{itemize}
+\item
+  Easily accessible variables e.g.~using remote censored data
+\item
+  environmental covariates
+\end{itemize}
+
+I first perform a simple exploration of the catchment variables using
+\emph{GGally} package. This is to help me reduce the number of catchment
+variables to include in the model. But since the end product expected is
+a plug and play type, I would have to include these catchment variables
+of interest even if they are not selected in the pre-screening phase.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Not run}
+\CommentTok{\# copy and run if needed}
+\NormalTok{GGally}\SpecialCharTok{::}\FunctionTok{ggpairs}\NormalTok{(dataList}\SpecialCharTok{$}\NormalTok{ageAtHarvestData[, }\FunctionTok{c}\NormalTok{(}\DecValTok{53}\SpecialCharTok{:}\DecValTok{68}\NormalTok{)])}
+\end{Highlighting}
+\end{Shaded}
+
+The following catchment variables are selected to model the fish
+survival in the lakes:
+
+\begin{itemize}
+\item
+  Coniferous forest
+\item
+  Moors and heathland
+\item
+  Peat bogs
+\item
+  Water bodies
+\item
+  Broad-leaved forest
+\item
+  Sparsely vegetated areas
+\item
+  mean\_ndvi
+\end{itemize}
+
+\hypertarget{other-covariates}{%
+\subsection{Other covariates}\label{other-covariates}}
+
+The \textbf{length at age this year} of the individual fishes was
+modelled with the following covariates:
+
+\begin{itemize}
+\item
+  Mean temperature in June
+\item
+  Precipitation in May
+\item
+  Precipitation in June
+\item
+  Precipitation in July
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Not run}
+\CommentTok{\# copy and run if needed}
+\NormalTok{GGally}\SpecialCharTok{::}\FunctionTok{ggpairs}\NormalTok{(ageAtHarvestData[, }\FunctionTok{c}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{, }\DecValTok{15}\NormalTok{, }\DecValTok{36}\SpecialCharTok{:}\DecValTok{45}\NormalTok{)])}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{fitted-model}{%
+\section{Fitted model}\label{fitted-model}}
+
+I fit a Bayesian age-at-harvest population model following
+\cite {skelly2023flexible, baerum2021population}. The script to run for
+the analysis can be found
+\href{https://github.com/Peprah94/fishyIPMs/blob/main/ModelFitting/modelFit.R}{here}.
+
+Here, I present a brief overview of the model fitted.
+
+Let:
+
+\begin{itemize}
+\item
+  \(i\) = individual
+\item
+  \(a\) = age under consideration. Here the age is from \(0\) to \(10\).
+\item
+  \(L_i\) = length at age this year for individual \(i\)
+\item
+  \(S_{ia}\) = sprawning of individual \(i\) at age \(a\)
+\item
+  \(F_{ia}\) = Fecundicity of individual \(i\) at age \(a\)
+\end{itemize}
+
+\hypertarget{modelling-l_i}{%
+\subsection{\texorpdfstring{Modelling
+\(L_i\)}{Modelling L\_i}}\label{modelling-l_i}}
+
+\[
+\begin{split}
+L_i &\sim N(\lambda_L, \sigma^{2}_{L}) \\
+\lambda_L &= X_L^T \beta_L
+\end{split}
+\] where \(X_L\) is a matrix of the covariates: Mean temperature in
+June, Precipitation in May, Precipitation in June and Precipitation in
+July; and \(\beta_L\) is a vector of covariate effect plus an intercept
+term and \(\sigma^{2}_{L}\) is the variation of the error term.
+
+The prior distributions assumed for \(\beta_L\) and \(\sigma^{2}_{L}\)
+are \(N(0, 10^2)\) and \(Uniform(0.1, 10)\) respectively.
+
+\hypertarget{sprawing-probability}{%
+\subsection{Sprawing probability}\label{sprawing-probability}}
+
+\[
+\begin{split}
+S_{ia} &\sim Bernouli(\psi_{ia}) \\
+logit(\psi_{ia}) &= X_{sp}^T \beta_{sp} + \Gamma_a + \xi_{sex[i]}\\
+\Gamma_a &\sim N(0, \sigma_a^2)\\
+\xi_{sex[i]} &\sim N(0, \sigma_{sex}^2)
+\end{split}
+\] where \(X_{sp}\) is a matrix of covariates: age at year, \(L_i\), age
+at year * \(L_i\), capture per unit effort; and \(\beta_{sp}\) is a
+vector of covariate effect plus an intercept term.
+
+\hypertarget{fecundicity}{%
+\subsection{Fecundicity}\label{fecundicity}}
+
+The equation for the fecundicity is derived from
+\cite{baerum2021population}.
+
+\[
+F_{ia} = exp(log(L_i * 2.21 - 6.15) \times S_{ia})
+\]
+
+\hypertarget{survival-probability}{%
+\subsection{Survival Probability}\label{survival-probability}}
+
+\[
+\begin{split}
+logit(\gamma_{ia}) &= X_{surv}^T \beta_{surv} + \nu_a + \Xi_{lake[i]}\\
+\nu_a &\sim N(0, \sigma_a^2)\\
+\xi_{lake[i]} &\sim N(0, \sigma_{lake}^2)
+\end{split}
+\] where \(X_{surv}\) is a matrix of covariates described in section
+3.1; and \(\beta_{surv}\) is a vector of covariate effect plus an
+intercept term.
+
+\hypertarget{projection-matrix-a}{%
+\subsection{Projection Matrix (A)}\label{projection-matrix-a}}
+
+The projection matrix used is the same as described in
+\cite{baerum2021population}. The reader is referred to page 9 of the
+\href{https://www.nature.com/articles/s41598-021-94350-x}{paper}.
+
+\hypertarget{model-for-observed-counts-at-each-age}{%
+\subsection{Model for observed counts at each
+age}\label{model-for-observed-counts-at-each-age}}
+
+The age at harvest count is modeled using the model described in
+\citep{skelly2023flexible}. The change we make is to estimate the stable
+population \(\lambda\) from the largest eigenvalue of the projection
+matrix (A) instead of simulating it from an informed prior.
+
+\hypertarget{results}{%
+\section{Results}\label{results}}
+
+I am currently running the model with \(20000\) iteration for each of
+the \(2\) MCMC chains. It seems to take a while.
+
+
+  \bibliography{references.bib}
+
+
+\end{document}

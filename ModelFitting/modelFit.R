@@ -31,13 +31,29 @@ nimbleLambdaEstimation <- nimble::nimbleRcall(
 # start writing the nimble code to fit the model
 
 code <- nimbleCode({
+  
+  #############################
+  # Length at age this year
+  #################################
+  sdEpsilon ~ dunif(0.01, 10)
+  
+  for(i in 1:4){
+    bl[i] ~ dnorm(0, sd = 10)
+  }
+  
+  for(ind in 1:nInds){
+  lengthLinearPred[ind] <- bl[1] + bl[2]*temp[ind] + bl[3]*precMay[ind] + bl[4]*precJune[ind] + bl[4]*precJuly[ind]
+  lengthAtAgeThisYear[ind] ~ dnorm(lengthLinearPred[ind], sd = sdEpsilon)
+  }
+  
+  
   #######################################
   # Sprawning probability
   ###########################################
   
   ## Prior distributions
   #covariate effect
-  for(i in 1:4){
+  for(i in 1:5){
     bs[i] ~ dnorm(0, sd=10)
   }
   sdbs ~dunif(0.01, 10)
@@ -61,7 +77,7 @@ code <- nimbleCode({
   # Sprawning probability
   for(ind in 1:nInds){
     for(age in 1:maxAge){ #loop through the age
-    logit(sprawnProb[ind, age]) <- bs[1] + bsAge[age] + psibs[1]*bs[2]*ageAtYear[ind] +  psibs[2]*bs[3]*lengthAtAgeThisYear[ind]  + psibs[3]*bs[3]*ageAtYear[ind]*lengthAtAgeThisYear[ind] + psibs[4]*bs[4]*CPUE[ind] +psibs[5]* bsSex[sex[ind]]
+    logit(sprawnProb[ind, age]) <- bs[1] + bsAge[age] + psibs[1]*bs[2]*ageAtYear[ind] +  psibs[2]*bs[3]*lengthAtAgeThisYear[ind]  + psibs[3]*bs[4]*ageAtYear[ind]*lengthAtAgeThisYear[ind] + psibs[4]*bs[5]*CPUE[ind] +psibs[5]* bsSex[sex[ind]]
     }
   }
   
@@ -83,7 +99,7 @@ code <- nimbleCode({
 ###########################################
  #prior distributions
 
-  for(i in 1:2){
+  for(i in 1:9){
     bsurv[i] ~dnorm(0, sd = 10)
   }
   
@@ -101,7 +117,7 @@ code <- nimbleCode({
   
   for(ind in 1:nInds){
     for(age in 1:maxAge){ #loop through the age
- logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurv[2]* yearGrowthOcc[ind] + bsLake[lake[ind]]  
+ logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurv[2]* yearGrowthOcc[ind] + bsLake[lake[ind]] + bsurv[3]*forest[ind] + bsurv[4]*moorsAndHeathland[ind] + bsurv[5]*peatBogs[ind] + bsurv[6]*waterbodies[ind] + bsurv[7]*broadleavedForest[ind] + bsurv[8]*sparselyVegAreas[ind] + bsurv[9]*meanDVI[ind]  
     }
   }
   
@@ -186,7 +202,18 @@ data = list(
   CPUE = as.numeric(dataList$sprawningData$capturePerUnitEffort),
   yearGrowthOcc = as.numeric(as.factor(dataList$ageAtHarvestData$yearGrowthOcc)),
   y = as.matrix(dataList$ageAtHarvestData[ ,4: 13]),
-  harvestCount = rowSums(as.matrix(dataList$ageAtHarvestData[4: 13]))
+  harvestCount = rowSums(as.matrix(dataList$ageAtHarvestData[4: 13])),
+  temp = as.numeric(scale(dataList$ageAtHarvestData$temperatureMeanInJuly)),
+  precMay = as.numeric(scale(dataList$ageAtHarvestData$precipitationSumInMay)),
+  precJune = as.numeric(scale(dataList$ageAtHarvestData$precipitationSumInJune)),
+  precJuly = as.numeric(scale(dataList$ageAtHarvestData$precipitationSumInJuly)),
+  forest = as.numeric(scale(dataList$ageAtHarvestData$`Coniferous forest`)),
+  moorsAndHeathland = as.numeric(scale(dataList$ageAtHarvestData$`Moors and heathland`)),
+  peatBogs = as.numeric(scale(dataList$ageAtHarvestData$`Peat bogs`)),
+  waterbodies = as.numeric(scale(dataList$ageAtHarvestData$`Water bodies`)),
+  broadleavedForest = as.numeric(scale(dataList$ageAtHarvestData$`Broad-leaved forest`)),
+  sparselyVegAreas = as.numeric(scale(dataList$ageAtHarvestData$`Sparsely vegetated areas`)),
+  meanDVI = as.numeric(dataList$ageAtHarvestData$mean_ndvi)
 )
 
 constants = list(
@@ -201,7 +228,7 @@ constants = list(
 )
 
 inits <- list(
-  bs = rnorm(4, 0, 1),
+  bs = rnorm(5, 0, 1),
   bsSex = rnorm(2, 0, 1),
   bsAge = rnorm(constants$maxAge, 0, 1),
   sdbsAge =1,
@@ -209,12 +236,13 @@ inits <- list(
   bsLake = rnorm(constants$nLakes, 0, 1),
   sdbs = 1,
   psibs = rep(0.5, 5),
-  bsurv = rnorm(2, 0, 1),
+  bsurv = rnorm(9, 0, 1),
   bsurvAge = rnorm(constants$maxAge, 0, 1),
   sdSurvAge = 1,
   Amat = array(0, dim = c(10,10, constants$nInds)),
+  sdEpsilon = 1, 
   N = array(10, dim = c(10,constants$T, constants$nInds)),
-  theta <- matrix(0.1, nrow = constants$maxAge, ncol = constants$nInds)
+  theta = matrix(0.1, nrow = constants$maxAge, ncol = constants$nInds)
 )
 
 
@@ -237,9 +265,9 @@ fishModelConfigured <- configureMCMC(fishModelCompiled,
                                                   "bsSex",
                                                   "bsurvAge", "bsurv",
                                                   "sdbsAge", "bsAge",
-                                                  "lambda")
+                                                   "sdEpsilon", "lambda", "bl")
 )
-
+#"lambda",
 
 # Build and run model
 fishModelBuilt <- buildMCMC(fishModelConfigured)
@@ -251,9 +279,10 @@ fishModelCompiled2 <- compileNimble(fishModelBuilt,
 
 #run MCMC
 fishModelMCMCrun <- runMCMC(fishModelCompiled2,
-                            niter = 1000,
+                            niter = 20000,
                             nchains = 2,
-                            nburnin = 200,
+                            nburnin = 10000,
+                            thin = 2,
                             setSeed = TRUE,
                             samples = TRUE,
                             samplesAsCodaMCMC = TRUE,
@@ -262,5 +291,7 @@ fishModelMCMCrun <- runMCMC(fishModelCompiled2,
 
 #check summary
 fishModelMCMCrun$summary$all.chains
+
+save(fishModelMCMCrun, file = "modelFitting/fittedModel.RData")
 
 # currently the model runs. Will have to think about the model structure in details.
