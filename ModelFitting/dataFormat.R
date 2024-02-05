@@ -9,6 +9,78 @@ library(reshape2)
 # set working directory.
 #change this for your particular application
 setwd("C:/GitHub/fishyIPMs")
+# catchment variables
+catchmentVars <- read_csv("dataset/model_catchment_vars.csv")
+colnames(catchmentVars)[2] <- "lakeID"  
+
+
+
+# Individual dataset
+indData <- read_csv("dataset/Example2_vatnLnr.csv")
+
+colnames(indData)[c(1:6,8:35)] <- c("lengthYrBefore",
+                                    "legthAtAgeThisYear",
+                                    "yearGrowthOcc",
+                                    "ageGrowthOcc",
+                                    "ageAtYr",
+                                    "fishID",
+                                    "climateZone",
+                                    "locationNumber",
+                                    "metersAboveSea",
+                                    "lineNumber",
+                                    "date",
+                                    "year",
+                                    "period",
+                                    "lakeName",
+                                    "lakeID",
+                                    "fishAge",
+                                    "fishLength",
+                                    "fishWeight",
+                                    "sex",
+                                    "maturationStage",
+                                    "maturation",
+                                    "ageAtGrowth",
+                                    "growth",
+                                    "instanteneousGrowth",
+                                    "capturePerUnitEffort",
+                                    "temperatureMeanInMay",
+                                    "temperatureMeanInJune",
+                                    "temperatureMeanInJuly",
+                                    "precipitationSumInMay",
+                                    "precipitationSumInJune",
+                                    "precipitationSumInJuly",
+                                    "temperatureMeanInSummer",
+                                    "precipitationSumDuringSummer",
+                                    "NAOwinterIndex")
+
+indData <- indData[complete.cases(indData[, c("maturationStage", "maturation")]),] %>%
+  dplyr::mutate(maturationStage = as.numeric(maturationStage),
+                maturation = as.numeric(maturation),
+                presence = 1)
+
+
+#merge indData and catchment variables
+
+indDataWithCatchments <- indData %>%
+  right_join(catchmentVars, by = c("lakeID", "year"))%>%
+  dplyr::mutate(maturationStage = as.numeric(maturationStage),
+                maturation = as.numeric(maturation),
+                presence = 1)
+
+unique(indDataWithCatchments$year)
+unique(indData$year)
+  
+
+
+
+
+
+
+# lakeNames <- read_delim("dataset/lakes_used_for_model_prep.csv", 
+#                         delim = ";", 
+#                         escape_double = FALSE, 
+#                         trim_ws = TRUE)
+
 
 # load Population data
 popnData <- read_delim("dataset/Example1.csv", 
@@ -47,60 +119,8 @@ s <- c(popnData[, 23])$maturation
 table(s,r) #what is the relationship between maturation and maturation stage?
 
 
-# Individual dataset
-indData <- read_delim("dataset/Example2.csv", 
-                       delim = ";", 
-                       escape_double = FALSE, 
-                       trim_ws = TRUE)
-
-colnames(indData)[c(1:6,8:34)] <- c("lengthYrBefore",
-                             "legthAtAgeThisYear",
-                             "yearGrowthOcc",
-                             "ageGrowthOcc",
-                             "ageAtYr",
-                             "fishID",
-                             "climateZone",
-                             "locationNumber",
-                             "metersAboveSea",
-                             "lineNumber",
-                             "date",
-                             "year",
-                             "period",
-                             "lakeName",
-                             "fishAge",
-                             "fishLength",
-                             "fishWeight",
-                             "sex",
-                             "maturationStage",
-                             "maturation",
-                             "ageAtGrowth",
-                             "growth",
-                             "instanteneousGrowth",
-                             "capturePerUnitEffort",
-                             "temperatureMeanInMay",
-                             "temperatureMeanInJune",
-                             "temperatureMeanInJuly",
-                             "precipitationSumInMay",
-                             "precipitationSumInJune",
-                             "precipitationSumInJuly",
-                             "temperatureMeanInSummer",
-                             "precipitationSumDuringSummer",
-                             "NAOwinterIndex")
-
-indData <- indData[complete.cases(indData[, c("maturationStage", "maturation")]),] %>%
-  dplyr::mutate(maturationStage = as.numeric(maturationStage),
-                maturation = as.numeric(maturation),
-                presence = 1)
 
 
-# catchment variables
-catchmentVars <- read_csv("dataset/NO_all_vars_over_catchments.csv")
-colnames(catchmentVars)  
-
-lakeNames <- read_delim("dataset/lakes_used_for_model_prep.csv", 
-                        delim = ";", 
-                        escape_double = FALSE, 
-                        trim_ws = TRUE)
 
 
 # get age-at-harvest data
@@ -108,11 +128,13 @@ lakeNames <- read_delim("dataset/lakes_used_for_model_prep.csv",
 # consistent with Skelly et al (2023)
 
 # data is collected in 2008
-ageAtHarvestData <- dcast(indData, 
+# create the age at harvest data
+ageAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYr", "sex")]),]%>%
+                  dcast(., 
                           yearGrowthOcc + sex + lakeName ~ ageAtYr, 
                           value.var = "presence",
                           fun.aggregate = sum)%>%
-  left_join(., indData, 
+  left_join(., indDataWithCatchments, 
             by = c("yearGrowthOcc", "sex", "lakeName"),
             keep = FALSE,
             multiple = "first")
@@ -124,13 +146,13 @@ ageAtHarvestData <- dcast(indData,
 #Select females and use the maturation variable (0/1) to model the sprawning probability
 index <- function(x) {ifelse(x > 0, 1, 0)}
 
-sprawningAtHarvestData <- indData %>%
+sprawningAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYr", "sex")]),]%>%
   dplyr::mutate(maturation = ifelse(sex == 1, 0, maturation))%>% # I assume 1 is males
   dcast(., 
         yearGrowthOcc + sex + lakeName ~ ageAtYr, 
         value.var = "maturation",
         fun.aggregate = sum)%>%
-  left_join(., indData, 
+  left_join(., indDataWithCatchments, 
             by = c("yearGrowthOcc", "sex", "lakeName"),
             keep = FALSE,
             multiple = "first")
@@ -145,7 +167,7 @@ sprawningAtHarvestData <- indData %>%
 
 dataList <- list(ageAtHarvestData = ageAtHarvestData,
                  sprawningData = sprawningAtHarvestData,
-                 indData = indData,
+                 indData = indDataWithCatchments,
                  popnData = popnData)
   
 save(dataList, 
