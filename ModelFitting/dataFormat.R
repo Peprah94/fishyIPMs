@@ -5,7 +5,7 @@ library(nimble)
 library(dplyr)
 library(readr)
 library(reshape2)
-
+library(tidyr)
 # set working directory.
 #change this for your particular application
 setwd("C:/GitHub/fishyIPMs")
@@ -67,10 +67,25 @@ indDataWithCatchments <- indData %>%
                 maturation = as.numeric(maturation),
                 presence = 1)
 
-unique(indDataWithCatchments$year)
-unique(indData$year)
-  
+#unique(indDataWithCatchments$year)
+#unique(indData$year)
 
+#unique(indDataWithCatchments$yearGrowthOcc[!is.na(indDataWithCatchments$yearGrowthOcc)])
+#unique(indDataWithCatchments$sex)
+#unique(indDataWithCatchments$lakeName)
+
+
+
+
+
+
+
+ table(indDataWithCatchments$yearGrowthOcc, indDataWithCatchments$lakeName)
+  
+#dcast(indDataWithCatchments, formula = yearGrowthOcc + sex + lakeName ~ ageAtYr, 
+#      value.var = "presence", 
+ #     drop = FALSE,
+ #     fill = 0)
 
 
 
@@ -129,8 +144,10 @@ table(s,r) #what is the relationship between maturation and maturation stage?
 
 # data is collected in 2008
 # create the age at harvest data
-ageAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYr", "sex")]),]%>%
-                  dcast(., 
+ageAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYr", "sex", "lakeName")]),]%>%
+                  
+  
+  dcast(., 
                           yearGrowthOcc + sex + lakeName ~ ageAtYr, 
                           value.var = "presence",
                           fun.aggregate = sum)%>%
@@ -147,7 +164,7 @@ ageAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[,
 index <- function(x) {ifelse(x > 0, 1, 0)}
 
 sprawningAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYr", "sex")]),]%>%
-  dplyr::mutate(maturation = ifelse(sex == 1, 0, maturation))%>% # I assume 1 is males
+  #dplyr::mutate(maturation = ifelse(sex == 1, 0, maturation))%>% # I assume 1 is males
   dcast(., 
         yearGrowthOcc + sex + lakeName ~ ageAtYr, 
         value.var = "maturation",

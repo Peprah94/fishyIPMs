@@ -68,6 +68,13 @@ code <- nimbleCode({
     bsAge[age] ~ dnorm(0, sd=sdbsAge)
   }
   
+  # Add lake effect
+  #lake effect
+  sdLake ~ dunif(0.01, 10)
+  for(l in 1:nLakes){
+    bsLake[l] ~ dnorm(0, sd = sdLake)
+  }
+  
   #variable selection Probability
   for(k in 1:5){
     psibs[k] ~ dunif(0,1)
@@ -77,7 +84,7 @@ code <- nimbleCode({
   # Sprawning probability
   for(ind in 1:nInds){
     for(age in 1:maxAge){ #loop through the age
-    logit(sprawnProb[ind, age]) <- bs[1] + bsAge[age] + psibs[1]*bs[2]*ageAtYear[ind] +  psibs[2]*bs[3]*lengthAtAgeThisYear[ind]  + psibs[3]*bs[4]*ageAtYear[ind]*lengthAtAgeThisYear[ind] + psibs[4]*bs[5]*CPUE[ind] +psibs[5]* bsSex[sex[ind]]
+    logit(sprawnProb[ind, age]) <- bs[1] + bsAge[age] + psibs[1]*bs[2]*ageAtYear[ind] +  psibs[2]*bs[3]*lengthAtAgeThisYear[ind]  + psibs[3]*bs[4]*ageAtYear[ind]*lengthAtAgeThisYear[ind] + psibs[4]*bs[5]*CPUE[ind] +psibs[5]* bsSex[sex[ind]] + bsLake[lake[ind]]
     }
   }
   
@@ -104,7 +111,7 @@ code <- nimbleCode({
   }
   
   sdSurvAge ~ dunif(0.01, 10)
-  sdLake ~ dunif(0.01, 10)
+  sdSurvLake ~ dunif(0.01, 10)
   
   for(i in 1:maxAge){
     bsurvAge[i]~dnorm(0, sd = sdSurvAge)
@@ -112,12 +119,12 @@ code <- nimbleCode({
   
   #lake effect
   for(i in 1:nLakes){
-   bsLake[i] ~dnorm(0, sd = sdLake)
+   bsSurvLake[i] ~dnorm(0, sd = sdSurvLake)
   }
   
   for(ind in 1:nInds){
     for(age in 1:maxAge){ #loop through the age
- logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurv[2]* yearGrowthOcc[ind] + bsLake[lake[ind]] + bsurv[3]*forest[ind] + bsurv[4]*moorsAndHeathland[ind] + bsurv[5]*peatBogs[ind] + bsurv[6]*waterbodies[ind] + bsurv[7]*broadleavedForest[ind] + bsurv[8]*sparselyVegAreas[ind] + bsurv[9]*meanDVI[ind]  
+ logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurv[2]* yearGrowthOcc[ind] + bsSurvLake[lake[ind]] + bsurv[3]*forest[ind] + bsurv[4]*moorsAndHeathland[ind] + bsurv[5]*peatBogs[ind] + bsurv[6]*waterbodies[ind] + bsurv[7]*broadleavedForest[ind] + bsurv[8]*sparselyVegAreas[ind] + bsurv[9]*meanDVI[ind]  
     }
   }
   
@@ -130,7 +137,7 @@ code <- nimbleCode({
     Amat[1,age ,ind] <-  fecundicity[ind, age]*survivalProb[ind, 1]
     Amat[age,(age-1),ind] <-  survivalProb[ind, age]
     }
-    Amat[maxAge, maxAge, ind] <- survivalProb[maxAge, maxAge]
+    Amat[maxAge, maxAge, ind] <- survivalProb[ind, maxAge]
 #  }
 
 # Define population size
@@ -233,9 +240,11 @@ inits <- list(
   bsAge = rnorm(constants$maxAge, 0, 1),
   sdbsAge =1,
   sdLake = 1,
+  sdSurvLake = 1,
   bsLake = rnorm(constants$nLakes, 0, 1),
+  bsSurvLake = rnorm(constants$nLakes, 0, 1),
   sdbs = 1,
-  psibs = rep(0.5, 5),
+  psibs = rep(1, 5),
   bsurv = rnorm(9, 0, 1),
   bsurvAge = rnorm(constants$maxAge, 0, 1),
   sdSurvAge = 1,
@@ -262,7 +271,7 @@ which(fishModelCompiled$lambda == 0)
 # Configure fishModel
 fishModelConfigured <- configureMCMC(fishModelCompiled,
                                      monitors = c("bs", "psibs", "sdbs",
-                                                  "bsSex",
+                                                  "bsSex", "bsSurvLake", "bsLake",
                                                   "bsurvAge", "bsurv",
                                                   "sdbsAge", "bsAge",
                                                    "sdEpsilon", "lambda", "bl")
@@ -279,9 +288,9 @@ fishModelCompiled2 <- compileNimble(fishModelBuilt,
 
 #run MCMC
 fishModelMCMCrun <- runMCMC(fishModelCompiled2,
-                            niter = 20000,
+                            niter = 2000,
                             nchains = 2,
-                            nburnin = 10000,
+                            nburnin = 1000,
                             thin = 2,
                             setSeed = TRUE,
                             samples = TRUE,
