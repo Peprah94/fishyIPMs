@@ -21,7 +21,7 @@ library(FSA)
 library(tidyverse)
 
 setwd("~/FreshRestore")
-read.table("innlandsfisk.txt", header = TRUE, sep = ";", dec = ".")
+fish_data<-read.table("innlandsfisk.txt", header = TRUE, sep = ";", dec = ".")
 focal_speciesid <- 5
 #start_year <- 1967
 #end_year <- 2017
@@ -29,7 +29,7 @@ focal_speciesid <- 5
 ```
 
 ##Wrangling of data
-Mostely cleaning and removing some of the data that seem starnge. Also making ready for the RFishBC-function
+Mostly cleaning and removing some of the data that seem strange. Also making ready for the RFishBC-function
 
 ```{r wrangling}
 # subset data for focal species
