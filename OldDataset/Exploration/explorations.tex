@@ -1,0 +1,647 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else  
+    % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\setcounter{secnumdepth}{5}
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+\usepackage[noblocks]{authblk}
+\renewcommand*{\Authsep}{, }
+\renewcommand*{\Authand}{, }
+\renewcommand*{\Authands}{, }
+\renewcommand\Affilfont{\small}
+\usepackage{mathtools}
+\usepackage[left]{lineno}
+\linenumbers
+\usepackage[a4paper, total={6in, 10in}]{geometry}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{multirow}
+\usepackage{setspace}\doublespacing
+\renewcommand{\abstractname}{Summary}
+\usepackage{bm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{rotating}
+\usepackage{array}
+\usepackage{doi}
+\usepackage[sort, round]{natbib}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{comment}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes,decorations,arrows,calc,arrows.meta,fit,positioning}
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
+\makeatother
+\makeatletter
+\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage[]{natbib}
+\bibliographystyle{plainnat}
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={FishyIPMS},
+  pdfauthor={Kwaku Peprah Adjei},
+  colorlinks=true,
+  linkcolor={black},
+  filecolor={Maroon},
+  citecolor={black},
+  urlcolor={black},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{FishyIPMS}
+\author{Kwaku Peprah Adjei}
+\date{}
+
+\begin{document}
+\maketitle
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, borderline west={3pt}{0pt}{shadecolor}, frame hidden, boxrule=0pt, interior hidden, sharp corners, breakable]}{\end{tcolorbox}}\fi
+
+\hypertarget{first-meeting-notes}{%
+\section{First meeting notes}\label{first-meeting-notes}}
+
+Quarto enables you to weave together content and executable code into a
+finished document. To learn more about Quarto see
+\url{https://quarto.org}.
+
+\hypertarget{objectives}{%
+\subsection{Objectives}\label{objectives}}
+
+\begin{itemize}
+\item
+  Fit a population dynamic model (IPMs) with anthropogenic drivers
+  \citep[human driven factors such as climate change, direct exploitation, pollution, biological invasions, sea-use change; ][]{moullec2021identifying}.
+\item
+  The IPM should be a mechanistic model
+  \citep[plug and play;][]{frost2023integrated, smallegange2017mechanistic}.
+  The IPMs should describe how the variables affect population.
+\item
+  IPMs should model temporal trends in human characteristics using
+  variables that indicate catchment state of each year and a continuous
+  time series data.
+\item
+  Produce prediction maps (of what?)
+\end{itemize}
+
+\hypertarget{covariates-to-use}{%
+\subsection{Covariates to use}\label{covariates-to-use}}
+
+\begin{itemize}
+\item
+  Easily accessible variables e.g.~using remote censored data
+\item
+  environmental covariates
+\end{itemize}
+
+\hypertarget{example-data-received}{%
+\section{Example data received}\label{example-data-received}}
+
+The data is explained in \cite{baerum2021population}.
+
+The following data have been received:
+
+\hypertarget{dataset-1-individual-data-for-some-fish-populations}{%
+\subsection{Dataset 1: Individual data for some fish
+populations}\label{dataset-1-individual-data-for-some-fish-populations}}
+
+\begin{itemize}
+\tightlist
+\item
+  Each row = one individual fish
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(readr)}
+\NormalTok{Example1 }\OtherTok{\textless{}{-}} \FunctionTok{read\_delim}\NormalTok{(}\StringTok{"Example1.csv"}\NormalTok{, }\AttributeTok{delim =} \StringTok{";"}\NormalTok{, }\AttributeTok{escape\_double =} \ConstantTok{FALSE}\NormalTok{, }\AttributeTok{trim\_ws =} \ConstantTok{TRUE}\NormalTok{)}
+
+\CommentTok{\#explore data}
+\FunctionTok{colnames}\NormalTok{(Example1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ [1] "Column1"       "klima"         "loknr"         "lpnr"         
+ [5] "dato"          "juli"          "periode"       "navn"         
+ [9] "kode"          "lenkenr"       "garnnr"        "m_vidde"      
+[13] "dyp1"          "dyp2"          "gj_dyp"        "art"          
+[17] "Lengde"        "vekt"          "k"             "v_gonfri"     
+[21] "kjonn"         "stadium"       "moden"         "moden1"       
+[25] "mage"          "cyst"          "gen"           "lpnr_2"       
+[29] "otr"           "alder_aar"     "otr_1"         "v_skaal"      
+[33] "v_skaalmfisk"  "vekt_diff"     "v_gonader"     "gon_kode"     
+[37] "v_skaal_dryw"  "wetprosent"    "v_glass"       "v_glass_prove"
+[41] "l_prove"       "v_prove"       "cs137_wet"     "cs137_dry"    
+[45] "filet"         "s_vekting"     "moh"          
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#summary(Example1)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{column-names-and-their-meaning}{%
+\subsubsection{Column names and their
+meaning}\label{column-names-and-their-meaning}}
+
+\emph{which columns are interesting?}
+
+I would love to have the meaning of the column names to make meaning of
+the data. I am only guessing, but my guesses may be wrong. I think:
+
+\begin{itemize}
+\item
+  \texttt{dato} - Date data was collected. The date is between
+  01.07.2007 to 01.08.2008.
+\item
+  \texttt{Juli} - July, but it has different codes. What do they mean?
+\end{itemize}
+
+Most of the column names are abbrevations.
+
+Looking at the dataset and the summary, is it safe to say this is a data
+with presence of multiple species (hopefully at a given location, but I
+cannot find a location name, lake name or ID). This is because I could
+not find the counts of the fishes at the lake. If the data is for each
+lake or location, the absences can also be inferred.
+
+\hypertarget{dataset-2-subsample-of-dataset-1}{%
+\subsection{Dataset 2: Subsample of dataset
+1}\label{dataset-2-subsample-of-dataset-1}}
+
+Here the ID represents and individual fish.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Example2 }\OtherTok{\textless{}{-}} \FunctionTok{read\_delim}\NormalTok{(}\StringTok{"Example2.csv"}\NormalTok{, }\AttributeTok{delim =} \StringTok{";"}\NormalTok{, }
+    \AttributeTok{escape\_double =} \ConstantTok{FALSE}\NormalTok{, }\AttributeTok{trim\_ws =} \ConstantTok{TRUE}\NormalTok{)}
+\FunctionTok{colnames}\NormalTok{(Example2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ [1] "LengdeVvekst"  "LengdeValder"  "vekstaar"      "vekstalder"   
+ [5] "alder_aar"     "ID"            "tilv_lengde"   "klima"        
+ [9] "loknr"         "moh"           "lpnr"          "dato"         
+[13] "aar"           "periode"       "navn"          "alder"        
+[17] "lengde"        "vekt"          "kjonn"         "moden"        
+[21] "moden1"        "tilvekstalder" "tilvekst"      "inst_vekst"   
+[25] "CPUE"          "Temp_mai"      "Temp_juni"     "Temp_juli"    
+[29] "nedbor_mai"    "nedbor_juni"   "nedbor_juli"   "tempratur"    
+[33] "nedbor"        "NaoV"          "Column1"       "_1"           
+[37] "_2"            "_3"            "_4"            "_5"           
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(Example2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+  LengdeVvekst     LengdeValder       vekstaar      vekstalder   
+ Min.   : 10.00   Min.   : 10.00   Min.   :1998   Min.   :0.000  
+ 1st Qu.: 35.56   1st Qu.: 35.56   1st Qu.:2004   1st Qu.:1.000  
+ Median : 83.05   Median : 83.05   Median :2005   Median :2.000  
+ Mean   : 93.25   Mean   : 93.24   Mean   :2005   Mean   :2.218  
+ 3rd Qu.:141.08   3rd Qu.:141.08   3rd Qu.:2006   3rd Qu.:3.000  
+ Max.   :409.49   Max.   :409.49   Max.   :2008   Max.   :9.000  
+                                                                 
+   alder_aar            ID        tilv_lengde            klima      
+ Min.   : 1.000   Min.   :  1.0   Length:4289        Min.   :1.000  
+ 1st Qu.: 2.000   1st Qu.:219.0   Class :character   1st Qu.:1.000  
+ Median : 3.000   Median :445.0   Mode  :character   Median :2.000  
+ Mean   : 3.218   Mean   :443.4                      Mean   :2.159  
+ 3rd Qu.: 4.000   3rd Qu.:670.0                      3rd Qu.:3.000  
+ Max.   :10.000   Max.   :896.0                      Max.   :3.000  
+                                                                    
+     loknr            moh             lpnr            dato          
+ Min.   : 1.00   Min.   : 36.0   Min.   :  1.00   Length:4289       
+ 1st Qu.: 6.00   1st Qu.: 92.0   1st Qu.: 24.00   Class :character  
+ Median :10.00   Median :205.0   Median : 42.00   Mode  :character  
+ Mean   :11.38   Mean   :341.7   Mean   : 60.77                     
+ 3rd Qu.:18.00   3rd Qu.:600.0   3rd Qu.: 88.00                     
+ Max.   :21.00   Max.   :800.0   Max.   :227.00                     
+                                                                    
+      aar          periode           navn               alder       
+ Min.   :2008   Min.   :0.0000   Length:4289        Min.   : 1.000  
+ 1st Qu.:2008   1st Qu.:0.0000   Class :character   1st Qu.: 4.000  
+ Median :2008   Median :1.0000   Mode  :character   Median : 5.000  
+ Mean   :2008   Mean   :0.6706                      Mean   : 5.446  
+ 3rd Qu.:2008   3rd Qu.:1.0000                      3rd Qu.: 7.000  
+ Max.   :2008   Max.   :1.0000                      Max.   :12.000  
+                                                                    
+     lengde         vekt            kjonn           moden       
+ Min.   : 85   Min.   :   8.3   Min.   :1.000   Min.   :0.0000  
+ 1st Qu.:180   1st Qu.:  62.1   1st Qu.:1.000   1st Qu.:0.0000  
+ Median :215   Median : 107.3   Median :1.000   Median :0.0000  
+ Mean   :223   Mean   : 154.4   Mean   :1.493   Mean   :0.2414  
+ 3rd Qu.:259   3rd Qu.: 193.5   3rd Qu.:2.000   3rd Qu.:0.0000  
+ Max.   :453   Max.   :1030.8   Max.   :2.000   Max.   :1.0000  
+ NA's   :10                     NA's   :2       NA's   :2       
+     moden1       tilvekstalder         tilvekst        inst_vekst    
+ Min.   :0.0000   Length:4289        Min.   :  4.41   Min.   :0.3828  
+ 1st Qu.:0.0000   Class :character   1st Qu.: 30.59   1st Qu.:1.0283  
+ Median :0.0000   Mode  :character   Median : 37.51   Median :1.0796  
+ Mean   :0.2498                      Mean   : 39.02   Mean   :1.0825  
+ 3rd Qu.:0.0000                      3rd Qu.: 46.00   3rd Qu.:1.2088  
+ Max.   :1.0000                      Max.   :151.43   Max.   :2.0314  
+ NA's   :2                                            NA's   :1       
+      CPUE            Temp_mai        Temp_juni       Temp_juli    
+ Min.   : 0.6095   Min.   : 3.983   Min.   : 7.65   Min.   :11.51  
+ 1st Qu.: 1.7000   1st Qu.: 5.803   1st Qu.:10.14   1st Qu.:13.98  
+ Median : 3.8889   Median : 7.110   Median :11.55   Median :14.93  
+ Mean   : 4.1464   Mean   : 7.221   Mean   :11.40   Mean   :14.75  
+ 3rd Qu.: 5.0357   3rd Qu.: 8.510   3rd Qu.:12.45   3rd Qu.:15.96  
+ Max.   :16.8889   Max.   :12.343   Max.   :15.78   Max.   :17.49  
+                                                                   
+   nedbor_mai      nedbor_juni      nedbor_juli       tempratur     
+ Min.   :  6.20   Min.   :  8.80   Min.   : 12.80   Min.   : 9.412  
+ 1st Qu.: 48.30   1st Qu.: 44.20   1st Qu.: 54.50   1st Qu.:10.664  
+ Median : 70.90   Median : 67.80   Median : 71.60   Median :11.759  
+ Mean   : 64.31   Mean   : 63.13   Mean   : 76.29   Mean   :11.816  
+ 3rd Qu.: 80.20   3rd Qu.: 75.60   3rd Qu.:101.00   3rd Qu.:12.847  
+ Max.   :106.40   Max.   :155.80   Max.   :195.80   Max.   :15.078  
+                                                                    
+     nedbor           NaoV         Column1           _1         
+ Min.   :209.4   Min.   :-0.8200   Mode:logical   Mode:logical  
+ 1st Qu.:315.8   1st Qu.:-0.2000   NA's:4289      NA's:4289     
+ Median :390.3   Median :-0.1100                                
+ Mean   :383.6   Mean   : 0.2695                                
+ 3rd Qu.:428.7   3rd Qu.: 0.7900                                
+ Max.   :540.2   Max.   : 1.8500                                
+                                                                
+       _2               _3              _4                  _5       
+ Min.   : 1.000   Min.   :   668   Length:4289        Min.   : 36.0  
+ 1st Qu.: 5.000   1st Qu.: 36938   Class :character   1st Qu.: 60.0  
+ Median :10.000   Median : 38967   Mode  :character   Median :205.0  
+ Mean   : 9.529   Mean   : 41208                      Mean   :288.4  
+ 3rd Qu.:14.000   3rd Qu.: 40445                      3rd Qu.:535.0  
+ Max.   :18.000   Max.   :118010                      Max.   :663.0  
+ NA's   :4272     NA's   :4272                        NA's   :4272   
+\end{verbatim}
+
+\emph{Do we link both datasets by their IDs?}
+
+NOTE: There is no ID in the first dataset. So do I link them by species
+or develop a species-specific IPM?
+
+\hypertarget{dataset-3-catchment-collected-per-lake}{%
+\subsection{Dataset 3: Catchment collected per
+lake}\label{dataset-3-catchment-collected-per-lake}}
+
+\begin{itemize}
+\tightlist
+\item
+  Each row represents a lake
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{catchments }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"NO\_all\_vars\_over\_catchments.csv"}\NormalTok{)}
+\FunctionTok{colnames}\NormalTok{(catchments)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ [1] "vassdragNr"                                                                            
+ [2] "vatnLnr"                                                                               
+ [3] "Land principally occupied by agriculture, with significant areas of natural vegetation"
+ [4] "Broad-leaved forest"                                                                   
+ [5] "Moors and heathland"                                                                   
+ [6] "Sparsely vegetated areas"                                                              
+ [7] "Peat bogs"                                                                             
+ [8] "Water bodies"                                                                          
+ [9] "Discontinuous urban fabric"                                                            
+[10] "Non-irrigated arable land"                                                             
+[11] "Coniferous forest"                                                                     
+[12] "Transitional woodland-shrub"                                                           
+[13] "Complex cultivation patterns"                                                          
+[14] "Water courses"                                                                         
+[15] "Mixed forest"                                                                          
+[16] "Industrial or commercial units"                                                        
+[17] "Green urban areas"                                                                     
+[18] "Sport and leisure facilities"                                                          
+[19] "Continuous urban fabric"                                                               
+[20] "Road and rail networks and associated land"                                            
+[21] "Airports"                                                                              
+[22] "Pastures"                                                                              
+[23] "Bare rocks"                                                                            
+[24] "Mineral extraction sites"                                                              
+[25] "Inland marshes"                                                                        
+[26] "Glaciers and perpetual snow"                                                           
+[27] "Sea and ocean"                                                                         
+[28] "Port areas"                                                                            
+[29] "Natural grasslands"                                                                    
+[30] "Intertidal flats"                                                                      
+[31] "mean_ndsi"                                                                             
+[32] "fractional_snow_cover"                                                                 
+[33] "mean_ndvi"                                                                             
+[34] "total_road_length"                                                                     
+[35] "road_density"                                                                          
+[36] "total_ditch_length"                                                                    
+[37] "ditch_density"                                                                         
+[38] "unbuilt"                                                                               
+[39] "res_built"                                                                             
+[40] "nres_built"                                                                            
+[41] "total_population"                                                                      
+[42] "population_density"                                                                    
+[43] "gHM"                                                                                   
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(catchments)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+  vassdragNr           vatnLnr      
+ Length:591         Min.   :     3  
+ Class :character   1st Qu.:   118  
+ Mode  :character   Median :  1051  
+                    Mean   :  5047  
+                    3rd Qu.:  2180  
+                    Max.   :209024  
+                                    
+ Land principally occupied by agriculture, with significant areas of natural vegetation
+ Min.   : 0.000                                                                        
+ 1st Qu.: 0.000                                                                        
+ Median : 0.000                                                                        
+ Mean   : 2.852                                                                        
+ 3rd Qu.: 1.955                                                                        
+ Max.   :85.934                                                                        
+                                                                                       
+ Broad-leaved forest Moors and heathland Sparsely vegetated areas
+ Min.   :  0.000     Min.   : 0.000      Min.   : 0.00           
+ 1st Qu.:  0.000     1st Qu.: 0.000      1st Qu.: 0.00           
+ Median :  2.167     Median : 5.172      Median :14.28           
+ Mean   : 17.817     Mean   :15.432      Mean   :22.90           
+ 3rd Qu.: 30.268     3rd Qu.:25.863      3rd Qu.:41.66           
+ Max.   :100.000     Max.   :99.896      Max.   :99.16           
+                                                                 
+   Peat bogs         Water bodies     Discontinuous urban fabric
+ Min.   :  0.0000   Min.   : 0.0000   Min.   : 0.00             
+ 1st Qu.:  0.0000   1st Qu.: 0.2035   1st Qu.: 0.00             
+ Median :  0.9125   Median : 0.8455   Median : 0.00             
+ Mean   :  6.6690   Mean   : 2.0653   Mean   : 1.44             
+ 3rd Qu.:  8.5524   3rd Qu.: 2.2132   3rd Qu.: 0.00             
+ Max.   :100.0000   Max.   :47.2630   Max.   :99.91             
+                                                                
+ Non-irrigated arable land Coniferous forest Transitional woodland-shrub
+ Min.   : 0.000            Min.   :  0.00    Min.   : 0.000             
+ 1st Qu.: 0.000            1st Qu.:  0.00    1st Qu.: 0.000             
+ Median : 0.000            Median :  0.00    Median : 0.000             
+ Mean   : 3.504            Mean   : 20.05    Mean   : 2.656             
+ 3rd Qu.: 0.000            3rd Qu.: 39.61    3rd Qu.: 0.000             
+ Max.   :96.060            Max.   :100.00    Max.   :57.443             
+                                                                        
+ Complex cultivation patterns Water courses      Mixed forest   
+ Min.   : 0.0000              Min.   : 0.0000   Min.   : 0.000  
+ 1st Qu.: 0.0000              1st Qu.: 0.0000   1st Qu.: 0.000  
+ Median : 0.0000              Median : 0.0000   Median : 0.000  
+ Mean   : 0.3231              Mean   : 0.1315   Mean   : 1.086  
+ 3rd Qu.: 0.0000              3rd Qu.: 0.0000   3rd Qu.: 0.000  
+ Max.   :36.0527              Max.   :16.6498   Max.   :45.713  
+                                                                
+ Industrial or commercial units Green urban areas Sport and leisure facilities
+ Min.   : 0.00000               Min.   :0.00000   Min.   :0.00000             
+ 1st Qu.: 0.00000               1st Qu.:0.00000   1st Qu.:0.00000             
+ Median : 0.00000               Median :0.00000   Median :0.00000             
+ Mean   : 0.09384               Mean   :0.01138   Mean   :0.06379             
+ 3rd Qu.: 0.00000               3rd Qu.:0.00000   3rd Qu.:0.00000             
+ Max.   :17.58435               Max.   :2.45899   Max.   :9.76409             
+                                                                              
+ Continuous urban fabric Road and rail networks and associated land
+ Min.   :0.00000         Min.   :0.00000                           
+ 1st Qu.:0.00000         1st Qu.:0.00000                           
+ Median :0.00000         Median :0.00000                           
+ Mean   :0.01214         Mean   :0.01468                           
+ 3rd Qu.:0.00000         3rd Qu.:0.00000                           
+ Max.   :5.71279         Max.   :8.18734                           
+                                                                   
+    Airports           Pastures          Bare rocks    
+ Min.   :0.000000   Min.   :0.000000   Min.   : 0.000  
+ 1st Qu.:0.000000   1st Qu.:0.000000   1st Qu.: 0.000  
+ Median :0.000000   Median :0.000000   Median : 0.000  
+ Mean   :0.001873   Mean   :0.007849   Mean   : 2.468  
+ 3rd Qu.:0.000000   3rd Qu.:0.000000   3rd Qu.: 0.000  
+ Max.   :0.599905   Max.   :1.924005   Max.   :53.809  
+                                                       
+ Mineral extraction sites Inland marshes     Glaciers and perpetual snow
+ Min.   : 0.00000         Min.   :0.000000   Min.   :0.0000             
+ 1st Qu.: 0.00000         1st Qu.:0.000000   1st Qu.:0.0000             
+ Median : 0.00000         Median :0.000000   Median :0.0000             
+ Mean   : 0.04256         Mean   :0.005025   Mean   :0.0442             
+ 3rd Qu.: 0.00000         3rd Qu.:0.000000   3rd Qu.:0.0000             
+ Max.   :19.09487         Max.   :2.969928   Max.   :8.9945             
+                                                                        
+ Sea and ocean       Port areas       Natural grasslands Intertidal flats   
+ Min.   : 0.0000   Min.   :0.000000   Min.   :0.000000   Min.   :0.000e+00  
+ 1st Qu.: 0.0000   1st Qu.:0.000000   1st Qu.:0.000000   1st Qu.:0.000e+00  
+ Median : 0.0000   Median :0.000000   Median :0.000000   Median :0.000e+00  
+ Mean   : 0.3005   Mean   :0.002194   Mean   :0.001686   Mean   :1.552e-05  
+ 3rd Qu.: 0.0000   3rd Qu.:0.000000   3rd Qu.:0.000000   3rd Qu.:0.000e+00  
+ Max.   :71.5460   Max.   :0.648935   Max.   :0.711776   Max.   :9.173e-03  
+                                                                            
+   mean_ndsi       fractional_snow_cover   mean_ndvi      total_road_length
+ Min.   :-0.2026   Min.   :0.0000        Min.   :0.1183   Min.   :     0   
+ 1st Qu.: 0.3938   1st Qu.:0.4721        1st Qu.:0.5831   1st Qu.:     0   
+ Median : 0.5460   Median :0.9350        Median :0.6757   Median :  4161   
+ Mean   : 0.5013   Mean   :0.7263        Mean   :0.6545   Mean   : 20204   
+ 3rd Qu.: 0.6431   3rd Qu.:0.9998        3rd Qu.:0.7545   3rd Qu.: 19618   
+ Max.   : 0.7740   Max.   :1.0000        Max.   :0.8530   Max.   :256730   
+ NA's   :4                                                                 
+  road_density       total_ditch_length ditch_density          unbuilt      
+ Min.   :0.0000000   Min.   :     0.0   Min.   :0.000e+00   Min.   :0.1520  
+ 1st Qu.:0.0000000   1st Qu.:     0.0   1st Qu.:0.000e+00   1st Qu.:0.9974  
+ Median :0.0004313   Median :   151.2   Median :1.621e-05   Median :0.9998  
+ Mean   :0.0012442   Mean   :  6761.6   Mean   :2.667e-04   Mean   :0.9869  
+ 3rd Qu.:0.0016803   3rd Qu.:  4520.9   3rd Qu.:3.100e-04   3rd Qu.:1.0000  
+ Max.   :0.0229385   Max.   :156650.1   Max.   :4.358e-03   Max.   :1.0136  
+                                                                            
+   res_built          nres_built        total_population   population_density 
+ Min.   :0.000000   Min.   :0.0000000   Min.   :    0.00   Min.   :   0.0000  
+ 1st Qu.:0.000000   1st Qu.:0.0000000   1st Qu.:    0.00   1st Qu.:   0.0000  
+ Median :0.000056   Median :0.0000000   Median :    1.13   Median :   0.0537  
+ Mean   :0.011244   Mean   :0.0018676   Mean   :  516.91   Mean   :  35.9188  
+ 3rd Qu.:0.002136   3rd Qu.:0.0002885   3rd Qu.:   42.02   3rd Qu.:   3.6931  
+ Max.   :0.739137   Max.   :0.2763020   Max.   :35542.86   Max.   :3069.6211  
+                                                                              
+      gHM         
+ Min.   :0.01147  
+ 1st Qu.:0.05810  
+ Median :0.09409  
+ Mean   :0.17734  
+ 3rd Qu.:0.25972  
+ Max.   :0.75534  
+                  
+\end{verbatim}
+
+\hypertarget{references}{%
+\section{References}\label{references}}
+
+\renewcommand{\bibsection}{}
+\bibliography{references.bib}
+
+
+
+
+\end{document}

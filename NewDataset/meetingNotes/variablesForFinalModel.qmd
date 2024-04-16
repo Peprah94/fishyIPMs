@@ -1,0 +1,39 @@
+---
+title: "Variables for final model"
+format: html
+editor: visual
+---
+This script describes the variable selection meeting for the final population models. 
+The meeting was with Jenny, Anders and Kim.
+
+# Length at age
+
+Depends on the nutrient content and productivity of the lakes. Productivity depends on the surronding areas (whether deep or shallow terrain, whether forest or built areas, etc). Collapse all variables into the simpler forms, since we may not have much information to model variation in the categories.
+
+The variables are:
+
+- Precipitation
+- Temperature (mean summer Temperature - may to august)
+- snow depth
+- Forest
+- Farmlands (linked to the nutrient inputs)
+- terrain : deep vrs shallow terrain. Average slope around the lake by getting a buffer around the lake and finding the mean.
+
+*Kim will get me an aggregation of all the temperature and precipitation variables. Jenny will send me updated catchment variable information on terrain.*
+
+# Survival of fishes
+
+Use the same variables for the length at age but with different response variables. We know little of what affects the survival of the fish (eg. the presence/absence of the predatory fish). 
+
+The variables are:
+
+- Precipitation
+- Temperature (mean summer Temperature - may to august)
+- snow depth
+- Forest
+- Farmlands (linked to the nutrient inputs)
+- terrain : deep vrs shallow terrain. Average slope around the lake by getting a buffer around the lake and finding the mean.
+
+*Kim will extract the fish population data.*
+
+
