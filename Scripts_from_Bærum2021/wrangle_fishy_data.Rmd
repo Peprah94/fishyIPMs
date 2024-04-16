@@ -20,16 +20,34 @@ library(RFishBC)
 library(FSA)
 library(tidyverse)
 
-setwd("~/FreshRestore")
+setwd("~/FreshRestore/")
 fish_data<-read.table("innlandsfisk.txt", header = TRUE, sep = ";", dec = ".")
 focal_speciesid <- 5
 #start_year <- 1967
 #end_year <- 2017
 #focal_lakes <-
 ```
+#Incklude biotic variables
+Include information whether a fish population is sympatric or allopatric, and also indicate if large predators are present (i.e., pike)
+```{r species2}
+allopatric_species <- fish_data %>%
+  group_by(FK_InnsjoNr) %>%
+  summarise(num_species = n_distinct(FK_ArtID)) %>%
+  filter(num_species == 1) %>%
+  select(FK_InnsjoNr)
+
+fish_data$is_allopatric <- ifelse(fish_data$FK_InnsjoNr %in% allopatric_species$FK_InnsjoNr, "allopatric", "sympatric")
+
+# add pike info
+fish_data<- fish_data %>%
+  group_by(FK_InnsjoNr) %>%
+mutate(pike_presence = if_else("37" %in% unique(FK_ArtID), "Yes", "No")) #37 is pike
+
+```
+
 
 ##Wrangling of data
-Mostly cleaning and removing some of the data that seem strange. Also making ready for the RFishBC-function
+Mostly cleaning and removing some of the data that looks strange. Also making ready for the RFishBC-function
 
 ```{r wrangling}
 # subset data for focal species
@@ -128,4 +146,15 @@ backcalc_data_FL <- backcalc_data_FL %>%
 backcalc_data_FL$vekstaar<-backcalc_data_FL$Aar-((backcalc_data_FL$agecap-backcalc_data_FL$alder_aar+1))
 ```
 
+##Include climate variables
+Including climate variables, idealy these would vary with year of growth
+
+```{r climate variables}
+#read climate var
+library(readr)
+timeseries_combined_vars <- read_csv("timeseries_combined_vars.csv")
+names(timeseries_combined_vars)
+
+
+```
 
