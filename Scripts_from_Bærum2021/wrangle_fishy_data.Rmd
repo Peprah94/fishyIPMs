@@ -152,8 +152,20 @@ Including climate variables, idealy these would vary with year of growth
 ```{r climate variables}
 #read climate var
 library(readr)
-timeseries_combined_vars <- read_csv("timeseries_combined_vars.csv")
-names(timeseries_combined_vars)
+expanded_climate_vars <- read_csv("expanded_climate_vars.csv")
+names(expanded_climate_vars)
+
+expanded_climate_vars$mean_summer<-rowMeans(expanded_climate_vars[c("may_temp_mean","jun_temp_mean","jul_temp_mean","aug_temp_mean")])
+
+expanded_climate_vars$snow_des_mar<-rowSums(expanded_climate_vars[c("dec_snow_depth","mar_snow_depth")])
+
+##match based on lakeID and year
+#mean summer temp
+backcalc_data_FL$mean_summer_temp <- expanded_climate_vars$mean_summer[match(paste(backcalc_data_FL$FK_InnsjoNr,backcalc_data_FL$vekstaar), paste(expanded_climate_vars$innsjo_nr,expanded_climate_vars$year))]
+
+#Snow in spring and autumn 
+backcalc_data_FL$snow_des_mar <- expanded_climate_vars$snow_des_mar[match(paste(backcalc_data_FL$FK_InnsjoNr,backcalc_data_FL$vekstaar), paste(expanded_climate_vars$innsjo_nr,expanded_climate_vars$year))]
+
 
 
 ```
