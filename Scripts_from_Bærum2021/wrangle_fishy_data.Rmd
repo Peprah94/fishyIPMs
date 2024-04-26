@@ -54,6 +54,20 @@ Mostly cleaning and removing some of the data that looks strange. Also making re
 
 species_data<-fish_data[fish_data$FK_ArtID==focal_speciesid,]
 
+#Calculate wpue per fishing day, assuming same effort across lakes and year (one night per event)
+
+species_data <- species_data %>%
+  group_by(FK_InnsjoNr, Aar, Maaned,Dag) %>%
+  mutate(WPUE_day = sum(Vekt)) %>%
+ungroup()
+
+#average WPUE over a year if multiple fishing days
+species_data <- species_data %>%
+  group_by(FK_InnsjoNr, Aar) %>%
+  mutate(WPUE_avg=mean(WPUE_day))%>%
+ungroup()
+
+
 
 #remove NAs for Length and Radius 
 backcalc_data<-species_data[complete.cases(species_data$Radius), ]
@@ -152,7 +166,7 @@ Including climate variables, idealy these would vary with year of growth
 ```{r climate variables}
 #read climate var
 library(readr)
-expanded_climate_vars <- read_csv("expanded_climate_vars.csv")
+expanded_climate_vars <- read_csv("~/FreshRestore/expanded_climate_vars.csv")
 names(expanded_climate_vars)
 
 expanded_climate_vars$mean_summer<-rowMeans(expanded_climate_vars[c("may_temp_mean","jun_temp_mean","jul_temp_mean","aug_temp_mean")])
