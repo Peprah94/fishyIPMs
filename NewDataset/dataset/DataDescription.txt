@@ -1,0 +1,26 @@
+From Kim:
+Here is the data attached. 
+“Arter.txt” is the species and codes used in the data.
+“Innlandsfisk.txt” is data on the individual fish level (here we can back calculate growth for each fish based on Radius1, Radius2 and so forth, if we would like that.
+“Oversikt-lokaliteter…xls” is a register at the lake level, showing years with catch data, coordinates and so on. 
+
+From Jenny:
+In the interest of expediency, I went ahead and extracted Corine land cover variables for all the new lake data. I used the following logic:
+
+Lakes sampled up to and including 2000 have landcover extracted from the 2000 Corine data (Norway was missing from 1990!)
+Lakes sampled after 2000 and up to/including 2006 have landcover extracted from the 2006 CLC data
+Lakes sampled after 2006 and up to/including 2012 have landcover extracted from the 2012 CLC data
+
+I found a new population dataset for time series that was published this year. It is a derived product using several other pop density datasets but has the added bonus of having each year represented from 1990 to 2020. (You can read about it here, if you want.)
+
+So each year is matched to its own year except for data preceding 1990. All lakes sampled prior to 1990 have values extracted from the 1990 raster.
+
+I am hoping this will be something you can work with, Kwaku! The innsjo_nr is the same as the vatnLnr in the previous dataset. It is the unique value Norway uses for a lake ID. The vassdragNr is the equivalent ID for the catchments. I should note that lakes can have multiple catchments and a single catchment may service several lakes. So, it will look like there may be duplicates in the data, but there are not. They are only duplicated if they have multiple sampling years.
+
+The Corine land cover data will resemble the data I sent for the previous set of lakes. It’s percent cover (of a given cover type) within a catchment. For the (human) population data, I have two values: a total population count over the catchment and a population density that accounts for the size of the catchments (total count/catchment area). There are a lot of zeros in the pop density, so you might have better luck with total pop count (although they’re highly correlated).
+
+I’m attaching a few files to this email. The .xls and .txt files are the original data I received from Kim Magnus. I’m also attaching the R script I used to find common lakes in the two datasets and get the relevant catchments for extracting data. I hope it’s legible enough to follow my procedure. Let me know if you want any of the other files I used in the script if you want to run through it yourself. (You should be able to run through everything except the spatial operations.) Lastly, I’ve attached a csv containing the landcover & population variables for the new data.
+
+I believe that Mat chose to just average the catchment values for lakes associated with 2+ catchments for his models.
+
+Let me know if you have any questions!

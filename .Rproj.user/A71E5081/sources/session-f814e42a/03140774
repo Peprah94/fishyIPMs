@@ -1,0 +1,27 @@
+{
+    "id": "03140774",
+    "path": "C:/GitHub/fishyIPMs/NewDataset/modelFittingPipeline/formatResults.R",
+    "project_path": "NewDataset/modelFittingPipeline/formatResults.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1717416769510.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "tempName": "Untitled2",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "106,18",
+        "scrollLine": "84"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1717480987,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1717480987643,
+    "read_only": false,
+    "read_only_alternatives": []
+}
