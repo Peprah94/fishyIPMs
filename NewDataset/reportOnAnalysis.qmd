@@ -1,0 +1,279 @@
+---
+title: "Freshwater Results"
+author: "Kwaku Peprah Adjei"
+format: 
+  pdf:
+    keep-tex: false
+    number-sections: true
+    shift-heading-level-by: 0
+    cite-method: natbib
+    link-citations: true
+    reference-links: true
+    reference-location: document
+    reference-section-title: "References"
+    toc: false
+    pdf-engine: "xelatex"
+    colorlinks: true
+    linkcolor: "black"
+    citecolor: "black"
+    urlcolor: "black"
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: no
+#fig-cap-location: bottom
+editor: visual
+fontsize:  12pt
+header-includes:
+  - \usepackage{float}
+  - \usepackage{xcolor}
+  - \usepackage{bm}
+  - \usepackage{algorithm}
+  - \usepackage{algpseudocode}
+  - \usepackage{rotating}
+  - \usepackage{longtable}
+  - \usepackage{amsmath,amssymb,amsfonts,amsthm}
+  - \usepackage{multirow}
+  - \usepackage{mathtools}
+  - \usepackage[sort,round]{natbib}
+  - \usepackage[left]{lineno}
+  - \usepackage{tabularx}
+---
+
+
+```{r, echo = FALSE, warning = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load libraries
+library(ggplot2)
+library(dplyr)
+library(latex2exp)
+# Set the theme of the ggplot
+theme_set(theme_bw())
+
+# Load data
+load("result/fittedModelWithOverdispersion.RData")
+
+load( "result/fittedModelLengthAtAge.RData")
+
+# Load formatted data
+load("dataset/formattedDataList.RData")
+```
+
+# Introduction
+This document provides an overview of the results from the data analysis, and the full description of the methods will be written in the overleaf document very soon. To describe briefly, we are using the age-at-harvest model, where the data is formatted such that we count the number of fishes in a particular `age group` (0, 1, 2+) for a unique combination of `year`, `sex` and `age`.
+
+# Length at Age (L)
+
+The length at age is modeled separately to predict the missing lengths (NAs) for the states. We model the length at age with a lognormal distribution with mean $\mu_i$ which is defined as a function of the fixed and random effects and variance $\sigma^2$. That is: $\ln(L) \sim N(\mu_i, \sigma^2$. The linear predictor is modelled on on the linear scale with covariates `forest`(for), `Year` (Yr), `Weight per unit effort` (WPUE), `winter snow depth` (Snow) and `summer Temperature` (Temp); and `age`, `lake` and `sex`:
+$$
+\begin{split}
+\mu_i & = \beta_0 + \beta_1 * Yr_i + \beta_2 * Temp_i + \beta_3 * Snow_i + \beta_4 * for_i + \beta_5 * WPUE_i + \gamma[age_i] + \eta[sex_i] + \nu[lake_i]; \\
+\gamma_j  &\sim N(0, \sigma^2_{a}) \quad
+\eta_k  \sim N(0, \sigma^2_{s}) \quad
+\nu_l  \sim N(0, \sigma^2_{l})\\
+\end{split}
+$$
+where $\gamma_j$, $\eta_k$ and $\nu_l$ are the $j^th$ level of age effect, $k^th$ level of sex effect and $l^th$ level of lake effect.
+
+## Results
+
+*Variable selection*
+
+We used the reversible jump MCMC to perform Bayesian model selection. For details on this, kindly refer to [this](https://r-nimble.org/variable-selection-in-nimble-using-reversible-jump-mcmc)
+```{r, echo = FALSE, fig.cap="Variable selection of covariates used to model the length at age of the fish data. The horizonatal orange colored lines shows the covariates that contribute much to the model, and the red dashed line shows the value of the prior probability of including the variables"}
+#| label: fig-varProb
+#| fig-height: 4
+#| fig-width: 10
+
+
+# Variable selection probabilities
+results <- lengthAtAgePosteriorSummary$summary
+varSelectionProb <- results[ rownames(results)[grepl("pbLength", rownames(results))], ]%>%
+  data.frame()%>%
+  mutate(covariate = c("year", "summerTemp", "winterSnowDepth", "forest","WPUE", "sex", "Lake"),
+         posNeg = ifelse(Mean > 0.8, "postive", "negative")
+  )
+
+ggplot(varSelectionProb, aes(x = reorder(covariate, Mean, FUN = mean), y = Mean, colour = posNeg))+
+  geom_point()+
+  geom_errorbar(aes(ymin = X95.CI_low, 
+                    ymax = X95.CI_upp),
+                width = .2)+
+  scale_color_manual("posNeg", breaks=c("postive", "negative"),values=c("#D55E00", "black"))+
+  geom_hline(yintercept = 0.47, linetype = "dashed", col = "red")+
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.6))+
+  coord_flip() +
+  theme(legend.position="none")+
+  ylab("Variable Selection Probablity")+
+  xlab("Covariate")
+  
+```
+Snow depth during the winter, the lake the fish was caught in and the forest had significant effect in predicting the length at age of the fish, as they have a probability of inclusion greater than $0.9$ (Figure \ref{fig-varProb}). These probabilities confirm the results from Figure \ref{fig-covEffect}, where the intervals of the effects of `WPUE`, `year`, `sex` and `summer temperature` contains $0$.
+
+```{r, echo=FALSE, fig.cap= "The effects of the covariates on the length at age of the fishes. The orange colored line are those whose Mean +- standard deviation interval does not contain 0."}
+#| label: fig-covEffect
+#| fig-height: 4
+#| fig-width: 10
+covEffects <- results[ rownames(results)[grepl("bl", rownames(results))], ]%>%
+  data.frame()
+
+covEffects[1:7,]%>%
+  mutate(covariate = c("year", "summerTemp", "winterSnowDepth", "forest","WPUE", "sex", "Lake"),
+         posNeg = ifelse(Mean - St.Dev. < 0 & Mean + St.Dev. > 0, "postive", "negative")
+  )%>%
+  ggplot(., aes(x = reorder(covariate, Mean, FUN = mean), y = Mean, colour = posNeg))+
+  geom_point()+
+  geom_errorbar(aes(ymin = Mean - St.Dev. , 
+                    ymax = Mean + St.Dev. ),
+                width = .2)+
+  scale_color_manual("posNeg", breaks=c("postive", "negative"),values=c("black", "#D55E00"))+
+  #geom_hline(yintercept = 0, linetype = "dashed", col = "red")+
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.6))+
+  coord_flip()+
+  theme(legend.position="none")+
+  ylab("Effect")+
+  xlab("Covariate")
+```
+
+The fish grows in length as the winter snow depth reduces and the forest, summer temperature and weight per unit effort increases.
+
+*Predicted Length at age*
+
+This is the first ten columns of the data predicted length at age for group: `0`, `1`, `2+`.
+```{r, echo = FALSE}
+head(lengthAtAgePosteriorSummary$data, 10)
+```
+
+
+# Age at harvest
+
+The details of the age at harvest model will be discribed in the overleaf document. I will try to provide the information that will be needed to understand the results. 
+
+## Defining models
+
+### Fecundicity
+This is modeled as:
+$$
+\begin{split}
+fecundicity_{i,a} &= exp(log(L_{i,a})*2.21 - 6.15) * spawnProb \\
+spawnProb &\sim U(0.001, 0.3),
+\end{split}
+$$
+where $L_{i,a}$ is the length at age of an individual $i$ at age $a$.
+
+### Survival Probability
+We model the survival of the fishes as:
+$$
+\begin{split}
+logit(\Psi_{i,a}) &= \alpha_0 + bsurvAge[age] \\ &+ \psi[1] * \alpha_1* year[ind]  + \psi[2] * \alpha_2 *forest[ind] + \psi[3] *\alpha_3 *pastures[ind] \\
+&+ \psi[4] *\alpha_4 *popnDensity[ind] + \psi[5] *\alpha_5 *summerTemp[ind] \\
+& + \psi[6] * \alpha_6 *summerSnowDepth[ind]  + \psi[7] *\alpha_7 *forestsq[ind] \\
+& + \psi[8] *\alpha_8 *pasturessq[ind] + \psi[9] *\alpha_9 *popnDensitysq[ind] \\
+&+ \psi[10] *\alpha_{10} *summerTempsq[ind] \\
+& + \psi[11] *\alpha_{11} *summerSnowDepthsq[ind] + \psi[12] *\alpha_{12} *WPUE[ind] \\
+&+ \psi[13] *\alpha_{13} * sex[ind] + \psi[14] *\alpha_{14} * lake[ind]
+\end{split}
+$$
+
+### Projection matrix
+
+
+## Results
+
+*Variable selection probability*
+```{r, echo = FALSE}
+
+#|fig-cap: "Variable selection of covariates used to model the length at age of the fish data. The horizonatal orange colored lines shows the covariates that contribute much to the model, and the red dashed line shows the value at which the covariate will be insignificant."
+#|
+results <- fishModelMCMCrun$summary$all.chains
+
+# Variable selection probabilities
+varSelectionProb <- results[ rownames(results)[grepl("psi", rownames(results))], ]%>%
+  data.frame()%>%
+  mutate(covariate = c("year", "forest", "pastures",
+                       "popnDensity", "summerTemp", "summerSnowDepth",
+                       "forestsq", "pasturessq", "popnDensitysq",
+                       "summerTempsq", "summerSnowDepthsq", "WPUE"),
+         posNeg = ifelse(Mean < 0.4 | Mean > 0.6, "postive", "negative")
+  )
+
+
+ggplot(varSelectionProb, aes(x = reorder(covariate, Mean, FUN = mean), y = Mean, colour = posNeg))+
+  geom_point()+
+  geom_errorbar(aes(ymin = X95.CI_low, 
+                    ymax = X95.CI_upp),
+                width = .2)+
+  scale_color_manual("posNeg", breaks=c("postive", "negative"),values=c("#D55E00", "black"))+
+  geom_hline(yintercept = 0.5, linetype = "dashed", col = "red")+
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.6))+
+  coord_flip() +
+  theme(legend.position="none")+
+  ylab("Variable Selection Probablity")+
+  xlab("Covariate")
+```
+
+*Covariate effects on population growth rate*
+
+```{r, echo = FALSE}
+#|fig-cap: "The effects of the covariates on the length at age of the fishes. The orange colored line are those whose 95% interval does not contain 0."
+covEffects <- results[ rownames(results)[grepl("bsurv", rownames(results))], ]%>%
+  data.frame()
+
+covEffects[2:13,]%>%
+  mutate(covariate = c( "year", "forest", "pastures",
+                       "popnDensity", "summerTemp", "summerSnowDepth",
+                       "forestsq", "pasturessq", "popnDensitysq",
+                       "summerTempsq", "summerSnowDepthsq", "WPUE"),
+         posNeg = ifelse(X95.CI_low < 0 & X95.CI_upp > 0, "postive", "negative")
+  )%>%
+  ggplot(., aes(x = reorder(covariate, Mean, FUN = mean), y = Mean, colour = posNeg))+
+  geom_point()+
+  geom_errorbar(aes(ymin = X95.CI_low, 
+                    ymax = X95.CI_upp),
+                width = .2)+
+  scale_color_manual("posNeg", breaks=c("postive", "negative"),values=c("black", "#D55E00"))+
+  #geom_hline(yintercept = 0, linetype = "dashed", col = "red")+
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.6))+
+  coord_flip()+
+  theme(legend.position="none")+
+  ylab("Effect")+
+  xlab("Covariate")
+```
+
+
+*Population growth by sex*
+```{r, echo = FALSE}
+#|fig-cap: "The effects of the covariates on the length at age of the fishes. The orange colored line are those whose 95% interval does not contain 0."
+
+results[ rownames(results)[grepl("lambda", rownames(results))], ] %>%
+  cbind(dataList$ageAtHarvestData[,1:3], .) %>%
+  data.frame()%>%
+  dplyr::group_by(year, sex)%>%
+  summarise_at(., c("Mean", "St.Dev.", "X95.CI_low", "X95.CI_upp"), "mean")%>%
+  ggplot(., aes(x = year, y = Mean, color = as.factor(sex)))+
+  geom_point()+
+  geom_line()
+```
+
+
+*Asymptotic Population growth rate*
+
+```{r, echo = FALSE}
+results[ rownames(results)[grepl("lambda", rownames(results))], ] %>%
+  cbind(dataList$ageAtHarvestData[,1:3], .) %>%
+  data.frame()%>%
+  dplyr::group_by(year)%>%
+  summarise_at(., c("Mean", "St.Dev.", "X95.CI_low", "X95.CI_upp"), "mean")%>%
+  ggplot(., aes(x = year, y = Mean))+
+  geom_point()+
+  geom_line()
+```
+
+
+# Questions to ponder
+
+Do we anticipate some interactions of the covariates that needs to be tested?

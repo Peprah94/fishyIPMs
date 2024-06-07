@@ -24,6 +24,35 @@ indData <- read.delim("dataset/innlandsfisk.txt",
 focal_speciesid <- 5
 indData <- indData[indData$FK_ArtID==focal_speciesid,]
 
+#Incklude biotic variables
+#Include information whether a fish population is sympatric or allopatric, 
+# and also indicate if large predators are present (i.e., pike)
+
+allopatric_species <- indData %>%
+  group_by(FK_InnsjoNr) %>%
+  summarise(num_species = n_distinct(FK_ArtID)) %>%
+  filter(num_species == 1) %>%
+  select(FK_InnsjoNr)
+
+indData$is_allopatric <- ifelse(indData$FK_InnsjoNr %in% allopatric_species$FK_InnsjoNr, "allopatric", "sympatric")
+
+# add pike info
+indData <- indData %>%
+  group_by(FK_InnsjoNr) %>%
+  mutate(pike_presence = if_else("37" %in% unique(FK_ArtID), "Yes", "No"))
+
+#Calculate wpue per fishing day, assuming same effort across lakes and year (one night per event)
+
+indData <- indData %>%
+  group_by(FK_InnsjoNr, Aar, Maaned,Dag) %>%
+  mutate(WPUE_day = sum(Vekt)) %>%
+  ungroup()
+
+#average WPUE over a year if multiple fishing days
+indData <- indData %>%
+  group_by(FK_InnsjoNr, Aar) %>%
+  mutate(WPUE_avg=mean(WPUE_day))%>%
+  ungroup()
 
 #remove NAs for Length and Radius 
 indData <- indData[complete.cases(indData$Radius), ]
@@ -108,7 +137,7 @@ indData$vekstaar <- indData$Aar-((indData$agecap - indData$alder_aar+1))
 
 
 #select variables of interest and change column names
-indData <- indData[, c(1, 4, 6:11, 21, 40:42)]
+indData <- indData[, c(1, 4, 6:10, 21, 40:41, 43, 44:46)]
 colnames(indData) <- c("fishID", 
                         "InnsjoNr",
                        "date",
@@ -116,21 +145,44 @@ colnames(indData) <- c("fishID",
                        "month",
                        "day",
                        "runNr",
-                       "speciesID",
                        "sex",
+                       "allopatric",
+                       "pikePresence",
+                       "WPUE",
                        "ageAtYear",
                        "lengthAtYear",
                        "yearGrowthOccured")
 
-# import data with catchment variables
+# import data with climatic variables
+
+climaticVars <- read_csv("dataset/expanded_climate_vars.csv")
+names(climaticVars)
+
+climaticVars$meanTempSummer <-rowMeans(climaticVars[c("may_temp_mean","jun_temp_mean","jul_temp_mean","aug_temp_mean")])
+
+climaticVars$snowDecToMarch <-rowSums(climaticVars[c("dec_snow_depth","mar_snow_depth")])
+
+climaticVars <- climaticVars%>%
+  select(c("vassdragNr", "innsjo_nr", "year", "meanTempSummer", "snowDecToMarch"))%>%
+  rename(InnsjoNr = innsjo_nr)
+
+
+
+##match based on lakeID and year
+#mean summer temp
+indData$meanSummerTemp <- climaticVars$meanTempSummer[match(paste(indData$InnsjoNr, indData$yearGrowthOccured), 
+                                                            paste(climaticVars$InnsjoNr,climaticVars$year))]
+
+#Snow in spring and autumn 
+indData$meanWinterSnow <- climaticVars$snowDecToMarch[match(paste(indData$InnsjoNr, indData$yearGrowthOccured), 
+                                                            paste(climaticVars$InnsjoNr, climaticVars$year))]
+
+#Format Catchment Variables
 catchmentVars <- read_csv("dataset/timeseries_combined_vars.csv")%>%
                   dplyr::mutate(innsjo_nr = as.character(innsjo_nr))%>%
                   dplyr::select(-c("vassdragNr"))%>% 
-                  distinct(innsjo_nr, year, .keep_all = TRUE)%>%
-                   rowwise() %>%
-                  mutate(summerTemperature = mean(c_across(c('may_temp_mean','jun_temp_mean', 'jul_temp_mean', 'aug_temp_mean')), na.rm = TRUE),
-                         summerPrecipitation = mean(c_across(c('may_total_precip','jun_total_precip', 'jul_total_precip', 'aug_total_precip')), na.rm = TRUE),
-                         summerSnowDepth = mean(c_across(c('may_snow_depth','jun_snow_depth', 'jul_snow_depth', 'aug_snow_depth')), na.rm = TRUE))
+                  distinct(innsjo_nr, year, .keep_all = TRUE)
+
 colnames(catchmentVars)[1] <- c("InnsjoNr") # ensure that the lakenr are the same for all datasets
 
 # import lake IDs
@@ -173,7 +225,7 @@ indDataWithCatchments <- indData %>%
 # data is collected in 2008
 # create the age at harvest data
 indDataWithCatchments$presence <- 1
-ageAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYear", "sex", "InnsjoNr", "speciesID")]),]%>%
+ageAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYear", "sex", "InnsjoNr", "meanSummerTemp", "meanWinterSnow")]),]%>%
   dcast(., 
         year + sex + InnsjoNr  ~ ageAtYear, 
         value.var = "presence",
@@ -183,14 +235,16 @@ ageAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[,
             keep = FALSE,
             multiple = "first")
 
+ageAtHarvestData <- ageAtHarvestData[complete.cases(ageAtHarvestData[, c("meanSummerTemp", "meanWinterSnow")]), ]
 
+# Make the ageAtHarvest into stages
 
 # Now I get the data to model sprawning
 # Use the idea in Magnus et.al 2021
 #Select females and use the maturation variable (0/1) to model the sprawning probability
 index <- function(x) {ifelse(x > 0, 1, 0)}
 
-sprawningAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYear", "sex", "InnsjoNr", "speciesID")]),]%>%
+sprawningAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("ageAtYear", "sex", "InnsjoNr")]),]%>%
   dplyr::mutate(maturation = ifelse(ageAtYear > 2, 0,1))%>% # I assume maturation occurs when age is grater than 1
   dcast(., 
         year + sex + InnsjoNr ~ ageAtYear, 
@@ -206,7 +260,7 @@ sprawningAtHarvestData <- indDataWithCatchments[complete.cases(indDataWithCatchm
 
 
 # Length at age dataset
-lengthAtAgeData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c("speciesID", "sex", "InnsjoNr", "ageAtYear")]),]%>%
+lengthAtAgeData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, c( "sex", "InnsjoNr", "ageAtYear")]),]%>%
   #dplyr::mutate(maturation = ifelse(sex == 1, 0, maturation))%>% # I assume 1 is males
   dcast(., 
         year + sex + InnsjoNr ~ ageAtYear, 
@@ -218,7 +272,7 @@ lengthAtAgeData <- indDataWithCatchments[complete.cases(indDataWithCatchments[, 
             multiple = "first")
 #change the NANs into NAs
 lengthAtAgeData[is.na(lengthAtAgeData)] <- NA
-
+lengthAtAgeData <- lengthAtAgeData[complete.cases(lengthAtAgeData[, c("meanSummerTemp", "meanWinterSnow")]), ]
 #save data to use in fitting the models
 
 dataList <- list(ageAtHarvestData = ageAtHarvestData,

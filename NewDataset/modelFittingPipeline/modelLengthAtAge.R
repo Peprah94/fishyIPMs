@@ -5,9 +5,8 @@ setwd("C:/GitHub/fishyIPMs/NewDataset")
 
 # Load formatted data
 load("dataset/formattedDataList.RData")
-
-#nimbleOptions(MCMCusePredictiveDependenciesInCalculations = TRUE)
-#nimbleOptions(MCMCorderPosteriorPredictiveSamplersLast = FALSE)
+nimbleOptions(MCMCusePredictiveDependenciesInCalculations = TRUE)
+nimbleOptions(MCMCorderPosteriorPredictiveSamplersLast = FALSE)
 
 # Load required packages
 library(nimble)
@@ -26,7 +25,8 @@ code <- nimbleCode({
   sdEpsilon ~ dunif(0.01, 10)
   sdblLake ~ dunif(0.01, 10)
   sdblAge ~ dunif(0.01, 10)
-  #sdblSpecies ~ dunif(0.01, 10)
+  
+  
   sdblSex ~ dunif(0.01, 10)
   for(i in 1:6){
     bl[i] ~ dnorm(0, sd = 10)
@@ -41,19 +41,20 @@ code <- nimbleCode({
   }
   
   for(i in 1:maxAge){
-    blAge[i] ~dnorm(0, sd= sdblAge)
+    blAge[i] ~ dnorm(0, sd= sdblAge)
   }
   
-  # for(i in 1:nSpecies){
-  #   blSpecies[i] ~ dnorm(0, sdblSpecies)
-  # }
+   for(i in 1:5){
+     pbLength[i] ~ dbern(0.5)
+   }
   
   # + blSpecies[speciesID[ind]]
   
   for(ind in 1:nInds){
     for(age in 1:maxAge){
-      lengthLinearPred[ind, age] <- blAge[age]  + blSex[sexID[ind]] + blLake[lakeID[ind]] + bl[1] + bl[2]*year[ind] + bl[3]*summerTemp[ind] + bl[4]*summerPrec[ind] + bl[5]*summerSnowDepth[ind] + bl[6]*forest[ind]
-      #lengthLinearPred[ind, age] <- bl[1] + bl[2]*temp[ind] + bl[3]*precMay[ind] + bl[4]*precJune[ind] + bl[5]*precJuly[ind] + bl[6]*CPUE[ind] + bl[7]*NAO[ind]
+      lengthLinearPred[ind, age] <- blAge[age]  + blSex[sexID[ind]] + blLake[lakeID[ind]] + bl[1] + pbLength[1]*bl[2]*year[ind] + pbLength[2]*bl[3]*summerTemp[ind] + pbLength[3]*bl[4]*summerSnowDepth[ind] + pbLength[4]*bl[5]*forest[ind] + pbLength[5]*bl[6]*WPUE[ind]
+      #lengthLinearPred[ind, age] <- blAge[age]  + blSex[sexID[ind]] + blLake[lakeID[ind]] + bl[1] + pbLength[1]*bl[2]*year[ind] + pbLength[2]*bl[3]*summerTemp[ind] + pbLength[3]*bl[4]*summerSnowDepth[ind] +pbLength[4]* bl[5]*forest[ind]
+      
       lengthAtAgeThisYear[ind, age] ~ dnorm(lengthLinearPred[ind, age], sd = sdEpsilon)
     }
   }
@@ -66,45 +67,54 @@ code <- nimbleCode({
 
 
 # Data for model
+stagedData <- rowSums(as.matrix(dataList$ageAtHarvestData[ ,6:17])) %>%
+  cbind(as.matrix(dataList$ageAtHarvestData[ ,4:5]), .)
 
-spawnsData <- apply(dataList$sprawningData[, 4:17], c(1,2), function(x) ifelse(x>0, 1, 0))
+stagedLengthAtAge <- rowMeans(as.matrix(dataList$lengthAtAgeData[ ,6: 17]), 
+                              na.rm = TRUE)%>%
+                      cbind(as.matrix(dataList$lengthAtAgeData[ ,4: 5]), .)
+stagedLengthAtAge[is.nan(stagedLengthAtAge)] <- NA
 
+#spawnsData <- apply(dataList$sprawningData[, 4:17], c(1,2), function(x) ifelse(x>0, 1, 0))
+wpue = as.numeric(scale(dataList$ageAtHarvestData$WPUE))
+wpue[is.na(wpue)] <- mean(wpue, na.rm = TRUE)
 
 data = list(
   #sprawns = as.numeric(dataList$sprawningData$maturation),
-  spawns = spawnsData,
+  #spawns = spawnsData,
   ageAtYear = as.numeric(dataList$sprawningData$ageAtYear),
-  lengthAtAgeThisYear = log(as.matrix(dataList$lengthAtAgeData[ ,4: 17])),#as.numeric(dataList$sprawningData$legthAtAgeThisYear),
+  lengthAtAgeThisYear = log(stagedLengthAtAge),#as.numeric(dataList$sprawningData$legthAtAgeThisYear),
   # CPUE = as.numeric(dataList$sprawningData$capturePerUnitEffort),
   year = as.numeric(scale(dataList$ageAtHarvestData$year)),#as.numeric(as.factor(dataList$ageAtHarvestData$yearGrowthOcc)),
-  y = as.matrix(dataList$ageAtHarvestData[ ,4:17]),
+  y = as.matrix(stagedData),
   harvestCount = rowSums(as.matrix(dataList$ageAtHarvestData[4:17])),
   #temp = as.numeric(scale(dataList$ageAtHarvestData$temperatureMeanInJuly)),
   # precMay = as.numeric(scale(dataList$ageAtHarvestData$precipitationSumInMay)),
   #precJune = as.numeric(scale(dataList$ageAtHarvestData$precipitationSumInJune)),
   # precJuly = as.numeric(scale(dataList$ageAtHarvestData$precipitationSumInJuly)),
   forest = as.numeric(scale(dataList$ageAtHarvestData$`Coniferous forest`)),
-  moorsAndHeathland = as.numeric(scale(dataList$ageAtHarvestData$`Moors and heathland`)),
-  peatBogs = as.numeric(scale(dataList$ageAtHarvestData$`Peat bogs`)),
-  waterbodies = as.numeric(scale(dataList$ageAtHarvestData$`Water bodies`)),
-  broadleavedForest = as.numeric(scale(dataList$ageAtHarvestData$`Broad-leaved forest`)),
-  sparselyVegAreas = as.numeric(scale(dataList$ageAtHarvestData$`Sparsely vegetated areas`)),
+ # moorsAndHeathland = as.numeric(scale(dataList$ageAtHarvestData$`Moors and heathland`)),
+ # peatBogs = as.numeric(scale(dataList$ageAtHarvestData$`Peat bogs`)),
+ # waterbodies = as.numeric(scale(dataList$ageAtHarvestData$`Water bodies`)),
+ # broadleavedForest = as.numeric(scale(dataList$ageAtHarvestData$`Broad-leaved forest`)),
+  #sparselyVegAreas = as.numeric(scale(dataList$ageAtHarvestData$`Sparsely vegetated areas`)),
   #meanDVI = as.numeric(dataList$ageAtHarvestData$mean_ndvi),
-  transitionalWoodland = as.numeric(scale(dataList$ageAtHarvestData$`Transitional woodland-shrub`)),
-  landOccByAgric = as.numeric(scale(dataList$ageAtHarvestData$`Land principally occupied by agriculture, with significant areas of natural vegetation`)),
-  discontUrbanFabric = as.numeric(scale(dataList$ageAtHarvestData$`Discontinuous urban fabric`)),
-  mixedForest = as.numeric(scale(dataList$ageAtHarvestData$`Mixed forest`)),
-  seaAndOcean = as.numeric(scale(dataList$ageAtHarvestData$`Sea and ocean`)),
-  bareRocks = as.numeric(scale(dataList$ageAtHarvestData$`Bare rocks`)),
-  glaciersAndPerpetualSnow = as.numeric(scale(dataList$ageAtHarvestData$`Glaciers and perpetual snow`)),
-  complexCultivationPatterns = as.numeric(scale(dataList$ageAtHarvestData$`Complex cultivation patterns`)),
-  sportsAndLeisureFacilities = as.numeric(scale(dataList$ageAtHarvestData$`Sport and leisure facilities`)),
-  greenUrbanAreas = as.numeric(scale(dataList$ageAtHarvestData$`Green urban areas`)),
-  pastures = as.numeric(scale(dataList$ageAtHarvestData$Pastures)),
-  summerTemp = as.numeric(scale(dataList$ageAtHarvestData$summerTemperature)),
-  summerPrec = as.numeric(scale(dataList$ageAtHarvestData$summerPrecipitation)),
-  summerSnowDepth = as.numeric(scale(dataList$ageAtHarvestData$summerSnowDepth)),
-  popnDensity = as.numeric(scale(dataList$ageAtHarvestData$pop_density))
+  #transitionalWoodland = as.numeric(scale(dataList$ageAtHarvestData$`Transitional woodland-shrub`)),
+  #landOccByAgric = as.numeric(scale(dataList$ageAtHarvestData$`Land principally occupied by agriculture, with significant areas of natural vegetation`)),
+  #discontUrbanFabric = as.numeric(scale(dataList$ageAtHarvestData$`Discontinuous urban fabric`)),
+ # mixedForest = as.numeric(scale(dataList$ageAtHarvestData$`Mixed forest`)),
+  #seaAndOcean = as.numeric(scale(dataList$ageAtHarvestData$`Sea and ocean`)),
+  #bareRocks = as.numeric(scale(dataList$ageAtHarvestData$`Bare rocks`)),
+  #glaciersAndPerpetualSnow = as.numeric(scale(dataList$ageAtHarvestData$`Glaciers and perpetual snow`)),
+  #complexCultivationPatterns = as.numeric(scale(dataList$ageAtHarvestData$`Complex cultivation patterns`)),
+  #sportsAndLeisureFacilities = as.numeric(scale(dataList$ageAtHarvestData$`Sport and leisure facilities`)),
+  #greenUrbanAreas = as.numeric(scale(dataList$ageAtHarvestData$`Green urban areas`)),
+  #pastures = as.numeric(scale(dataList$ageAtHarvestData$Pastures)),
+  summerTemp = as.numeric(scale(dataList$ageAtHarvestData$meanSummerTemp)),
+  #summerPrec = as.numeric(scale(dataList$ageAtHarvestData$summerPrecipitation)),
+  summerSnowDepth = as.numeric(scale(dataList$ageAtHarvestData$meanWinterSnow)),
+  popnDensity = as.numeric(scale(dataList$ageAtHarvestData$pop_density)),
+  WPUE = wpue
   # NAO = as.numeric(dataList$ageAtHarvestData$NAOwinterIndex)
 )
 
@@ -120,6 +130,7 @@ constants = list(
 )
 
 inits <- list(
+  pbLength = rep(0.5, 5),
   bsp = rnorm(5, 0, 1),
   bl = rnorm(6, 0, 1),
   bsurv = rnorm(22, 0, 1),
@@ -165,27 +176,15 @@ fishModel <- nimbleModel(code,
 # compile nimbleModel
 fishModelCompiled <- compileNimble(fishModel)
 
-# Configure fishModel
-# fishModelConfigured <- configureMCMC(fishModelCompiled,
-#                                      monitors = c("bl", "blLake", "blAge", "blSpecies", "blSex",
-#                                                   "bsp", "bspLake", "bspAge", "bspSpecies", "bspSex",
-#                                                   "bsurv", "bsurvLake", "bsurvAge", "bsurvSpecies", "bsurvSex",
-#                                                    "sdblLake", "sdblAge", "sdblSpecies", "sdblSex",
-#                                                    "sdbspLake", "sdbspAge", "sdbspSpecies", "sdbspSex",
-#                                                    "sdbsurvLake", "sdbsurvAge", "sdbsurvSpecies", "sdbsurvSex",
-#                                                   "sdEpsilon", "lambda", "survivalProb","spawnProb")
-# )
+# Configure model
+
 
 fishModelConfigured <- configureMCMC(fishModelCompiled,
                                      monitors = c("bl", "blLake", "blAge", "blSex",
-                                                  "sdblLake", "sdblAge", "sdblSex", "lengthAtAgeThisYear")
+                                                  "sdblLake", "sdblAge", "sdblSex", 
+                                                  "lengthAtAgeThisYear", "sdEpsilon",
+                                                  "pbLength")
 )
-#"lambda",
-
-#change samplers for some MCMC configurations
-#fishModelConfigured$removeSamplers(c("blLake", "blAge"))
-#fishModelConfigured$addSampler(target = "blLake", type = "RW_block")
-#fishModelConfigured$addSampler(target = "blAge", type = "RW_block")
 
 # Build and run model
 fishModelBuilt <- buildMCMC(fishModelConfigured)
@@ -215,6 +214,7 @@ lengthAtAgePosteriorSummary$data <- matrix(lengthAtAgeModelRun$summary$all.chain
                                            byrow = FALSE)
 lengthAtAgePosteriorSummary$summary <- lengthAtAgeModelRun$summary$all.chains[rownames(lengthAtAgeModelRun$summary$all.chains)[!grepl("lengthAtAge", rownames(lengthAtAgeModelRun$summary$all.chains))] , ]
 
-save(lengthAtAgePosteriorSummary, file = "result/fittedModelLengthAtAge.RData")
+save(lengthAtAgePosteriorSummary, 
+     file = "result/fittedModelLengthAtAge.RData")
 
 # currently the model runs. Will have to think about the model structure in details.
