@@ -1,0 +1,515 @@
+# set working directory.
+#change this for your particular application
+#setwd("C:/GitHub/fishyIPMs/NewDataset")
+
+
+# Load formatted data
+load("dataset/formattedDataList.RData")
+
+#load the predictions of the lengthAtAge
+load("result/fittedModelLengthAtAge.RData")
+
+nimbleOptions(MCMCusePredictiveDependenciesInCalculations = FALSE)
+nimbleOptions(MCMCorderPosteriorPredictiveSamplersLast = TRUE)
+
+# Load required packages
+library(nimble)
+library(dplyr)
+library(readr)
+library(reshape2)
+
+# Write nimble Function to calculate eigen values and extract the maximum
+lambdaEstimation <- function(x){
+  ret <- max(Re(eigen(x)$values))
+  return(ret)
+}
+
+nimbleLambdaEstimation <- nimble::nimbleRcall(
+  prototype = function(x = double(2)){},
+  returnType = double(0),
+  Rfun = 'lambdaEstimation'
+)
+
+constrainedLambda <- function(z, lambda){
+  # Get the maximum of z
+  zMax <- max(z[1:length(z)])
+  
+  if(zMax >= lambda){
+    lambdaInd <- zMax + 0.0001
+  } else {
+    lambdaInd <- lambda
+  } 
+  return(lambdaInd)
+}
+
+nimbleConstrainedLambda <- nimble::nimbleRcall(
+  prototype = function(z = double(1), lambda = double(0)){},
+  returnType = double(0),
+  Rfun = 'constrainedLambda'
+)
+
+#test function
+nimbleConstrainedLambda(c(0.1, 0.5, 0.1), 0)
+#nimbleLambdaEstimation(fishModelCompiled$Amat[,,1])
+
+
+# start writing the nimble code to fit the model
+
+code <- nimbleCode({
+  
+  ############################
+  # We assume that spawning probability is constant across the year ans
+  # assume a prior for the spawning probability
+  ###########################
+  spawnProb ~ dunif(0.0001, 0.3)
+  
+  #############################
+  # Selectivity
+  #############################
+  selectAlpha ~ dgamma(1, 1)
+  
+  for(ind in 1:nInds){
+    for(age in 1:maxAge){ #loop through the age
+      fecundicity[ind, age] <- 1/(1 + exp(-selectAlpha*(lengthAtAgeThisYear[ind, age] - medLength[age])))
+      #exp(log(exp(lengthAtAgeThisYear[ind, age]))*2.21 - 6.15) * spawnProb
+    }
+  }
+  #for(ind in 1:nInds){
+  # for(age in 1:maxAge){ #loop through the age
+  #   fecundicityScale[ind, age] <- 
+  # }
+  #}
+  
+  ##############################################   
+  # survival probability
+  ###########################################
+  #prior distributions
+  
+  intercept ~ dnorm(0, sd = 100)  
+  
+  sdbsurvAge ~ dunif(0.1, 2)
+  sdbsurvYear ~ dunif(0.01, 2)
+  sdbsurvSex ~ dunif(0.1, 2)
+  
+  #sdbsurvAge <- 10
+  sdbsurvLake <- 10
+  # sdbsurvSex <- 10
+  
+  for(i in 1:maxAge){
+    bsurvAge[i] ~ dnorm(0, sd = sdbsurvAge)
+  }
+  
+  
+  # 
+  # Inclusion of variables in a model
+  alpha ~ dunif(0,1)    ## prior on inclusion probability
+  
+  # variable selection parameters
+  for(i in 1:10){
+    psi[i] ~ dbern(0.5)
+    bsurvIndex[i] ~ dnorm(0, sd = 100)
+    #bsurvIndex[i] <- psi[i] * bsurv[i]
+  }
+  
+  # year effect
+  # for(i in 1:nYears){
+  #   bsurvYear[i] ~ dnorm(0, sd = sdbsurvYear)
+  # }
+  # 
+  # 
+  for(i in 1:nSex){
+    bsurvSex[i] ~ dnorm(0, sd = sdbsurvSex)
+  }
+  
+  for(ind in 1:nInds){
+    #for(age in 1:maxAge){ #loop through the age
+      #logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurvLake[lakeID[ind]] + bsurvSex[sexID[ind]] + psi[1] * bsurv[2]* year[ind]  + psi[2] * bsurv[3]*forest[ind] + psi[3] * bsurv[4]*pastures[ind] + psi[4] * bsurv[5]*popnDensity[ind] + psi[5] * bsurv[6]*summerTemp[ind] + psi[6] * bsurv[7]*summerPrec[ind] + psi[7] * bsurv[8]*summerSnowDepth[ind]  + psi[8] * bsurv[9]*forestsq[ind] + psi[9] * bsurv[10]*pasturessq[ind] + psi[10] * bsurv[11]*popnDensitysq[ind] + psi[11] * bsurv[12]*summerTempsq[ind] + psi[12] * bsurv[13]*summerPrecsq[ind] + psi[13] * bsurv[14]*summerSnowDepthsq[ind] 
+      log(lambda[ind]) <- intercept + bsurvSex[sexIDObs[ind]] + bsurvIndex[10] * year[ind] +
+        # bsurvIndex[1] * year[ind]  + 
+        #bsurvIndex[11] * forest[ind] + 
+       # bsurvIndex[12] * pastures[ind] + 
+        bsurvIndex[1] * summerSnowDepth[ind]  +
+        bsurvIndex[2] * popnDensity[ind] +
+        bsurvIndex[3] * summerTemp[ind] +
+        #bsurvIndex[12] * forestsq[ind] +
+        #bsurvIndex[14] * pasturessq[ind] +
+        #bsurvIndex[9] * popnDensitysq[ind] +
+        bsurvIndex[4] * summerTempsq[ind] +
+        #bsurvIndex[11] * summerSnowDepthsq[ind] +
+        bsurvIndex[5] * WPUE[ind] +
+        bsurvIndex[6] * lakeID[ind] +
+        # bsurvIndex[14] * sexID[ind]+
+        bsurvIndex[7] * summerTemp[ind] * WPUE[ind] +
+        bsurvIndex[8] * popnDensitysq[ind] +
+        bsurvIndex[9] * summerSnowDepthsq[ind]
+  #  }
+  }
+  
+  ## Population size
+  # Initialise the population size nodes
+  #Amat[1:10, 1:10 ,1:nInds] <- 0
+  # for(ind in 1:nInds){
+  #   Amat[1,1 ,ind] <-  fecundicity[ind, 1]*survivalProb[ind, 1]
+  #   for(age in 2:maxAge){ #loop through the age
+  #     Amat[1,age ,ind] <-  fecundicity[ind, age]*survivalProb[ind, 1]
+  #     Amat[age,(age-1),ind] <-  survivalProb[ind, age]
+  #   }
+  #   # Amat[maxAge, maxAge, ind] <- survivalProb[ind, maxAge]
+  #   
+  # }
+  #} 
+  
+  # year effect
+  # for(i in 1:nYears){
+  #   bsurvProbYear[i] ~ dnorm(0, sd = 1)
+  # }
+  # 
+  # 
+  for(i in 1:nSex){
+    bsurvProbSex[i] ~ dnorm(0, sd = 1)
+  }
+  
+  for(i in 1:maxAge){
+    bsurvProbAge[i] ~ dunif(0, 1)
+  }
+  
+survProbIntercept  ~ dnorm(0, sd = 1)
+bsurvProbYear ~ dnorm(0, sd = 1)
+  
+  for(ind in 1:nInds){
+    for(age in 1:maxAge){ 
+    survivalProb[ind, age] <- bsurvProbAge[age]  #bsurvProbYear *year[ind] + bsurvProbSex[sexIDObs[ind]] + bsurvProbAge[age] + survProbIntercept
+  }
+  }
+  # Growth rate (lambda) for each individual
+  for(ind in 1:nInds){
+    #lambda[ind] <- exp(mean(r.annual[u:T, ind])) 
+    
+    # Asymptotic population growth rate
+    
+    
+    #nimbleLambdaEstimation(Amat[1:maxAge, 1:maxAge, ind])
+    # Proportion of stable distribution
+    # check skelly et. al (2023) page 1066 for equations
+    
+    # w = proportion to stable age
+    # z = probability of remaining in the same age class
+    # g = probability of surviving to the next stage class
+    w[ind, 1] <- 1 
+    # Probability of surviving to the next stage class
+    g[ind, 1] <- survivalProb[ind, 1]
+    g[ind, maxAge] <- (survivalProb[ind, maxAge])^d[maxAge] * (1 - survivalProb[ind, maxAge])/ (1 - (survivalProb[ind, maxAge])^d[maxAge] )
+    z[ind, maxAge] <- (1 - survivalProb[ind, maxAge] ^ (d[maxAge]  - 1)) / (1 - survivalProb[ind, maxAge] ^ d[maxAge] ) * survivalProb[ind, maxAge]
+    z[ind, 1] <- 0 #survivalProb[ind, maxAge]
+    for(age in 2:(maxAge-1)){
+      z[ind, age] <- 0 #(1 - survivalProb[ind, age] ^ (d[age] - 1)) / (1 - survivalProb[ind, age] ^ d[age]) * survivalProb[ind, age]
+      g[ind, age] <- (survivalProb[ind, age])^d[age] * (1 - survivalProb[ind, age])/ (1 - (survivalProb[ind, age])^d[age])
+    }
+
+    # Contrain the lambda estimates to avoid identifiability issues
+    lambdaInd[ind] <- nimbleConstrainedLambda(z[ind, 1:maxAge], lambda[ind])
+    
+    for(age in 2:(maxAge-1)){
+      w[ind, age] <- (g[ind, age-1]/((lambdaInd[ind] -z[ind, age])))*w[ind, age-1] 
+    }
+    
+    w[ind, maxAge] <- (g[ind, maxAge-1]/((lambdaInd[ind] -z[ind, maxAge])))*w[ind, maxAge-1] 
+    
+    #stable state distribution
+    C[ind, 1:maxAge] <- w[ind, 1:maxAge]/sum(w[ind, 1:maxAge]) 
+    
+    #expected counts in each stage class
+    for(age in 2:(maxAge)){
+      ey[ind, age] <- (g[ind, age-1]*C[ind, age-1] + z[ind, age]*C[ind, age]) *fecundicity[ind, age]
+    }
+    #ey[ind, maxAge] <- g[ind, maxAge-1]*C[ind, maxAge-1] + survivalProb[ind, maxAge]*C[ind, maxAge]
+    ey[ind, 1] <- (lambdaInd[ind] - sum(ey[ind, 2:maxAge]))*fecundicity[ind, 1]
+    #ey[ind, 1] <- ( g[ind, 1]*C[ind, 1]) * fecundicity[ind, 1]
+    
+    # likelihood
+   # theta[ind, 1:maxAge] ~ ddirch(ey[ind, 1:maxAge])
+    y[ind, 1:maxAge] ~ dmulti(ey[ind, 1:maxAge], harvestCount[ind])
+    
+    #   # simulate new data
+    #y_new[ind, 1:maxAge] ~ dmulti(ey[ind, 1:maxAge], harvestCount[ind])
+    #   
+    #for(age in 1:maxAge){
+    #  g_obs[ind, age] <- (y[ind, age] + 0.5) * log(y[ind, age] + 0.5 / (harvestCount[ind] * ey[ind, age] / sum(ey[ind, 1:maxAge])))
+    #  g_new[ind, age] <- (y_new[ind, age] + 0.5) * log(y_new[ind, age] + 0.5 / (harvestCount[ind] * ey[ind, age] / sum(ey[ind, 1:maxAge])))
+    #  }
+  }
+
+# for(ind in 1:nPreds){
+#   #for(k in 1:maxAge){ #loop through the age
+#     #logit(survivalProb[ind, age]) <- bsurv[1] + bsurvAge[age] + bsurvLake[lakeID[ind]] + bsurvSex[sexID[ind]] + psi[1] * bsurv[2]* year[ind]  + psi[2] * bsurv[3]*forest[ind] + psi[3] * bsurv[4]*pastures[ind] + psi[4] * bsurv[5]*popnDensity[ind] + psi[5] * bsurv[6]*summerTemp[ind] + psi[6] * bsurv[7]*summerPrec[ind] + psi[7] * bsurv[8]*summerSnowDepth[ind]  + psi[8] * bsurv[9]*forestsq[ind] + psi[9] * bsurv[10]*pasturessq[ind] + psi[10] * bsurv[11]*popnDensitysq[ind] + psi[11] * bsurv[12]*summerTempsq[ind] + psi[12] * bsurv[13]*summerPrecsq[ind] + psi[13] * bsurv[14]*summerSnowDepthsq[ind]
+#     log(lambdaPred[ind]) <- intercept  + bsurvSex[sexIDPred[ind]] + bsurvIndex[10] * yearPred[ind] +
+#       # bsurvIndex[1] * year[ind]  +
+#       #bsurvIndex[11] * forestPred[ind] +
+#       #bsurvIndex[12] * pastures[ind] +
+#       bsurvIndex[1] * summerSnowDepthPred[ind]  +
+#       bsurvIndex[2] * popnDensityPred[ind] +
+#       bsurvIndex[3] * summerTempPred[ind] +
+#      # bsurvIndex[12] * forestsqPred[ind] +
+#       # bsurvIndex[14] * pasturessq[ind] +
+#       #bsurvIndex[9] * popnDensitysq[ind] +
+#       bsurvIndex[4] * summerTempsqPred[ind] +
+#       #bsurvIndex[11] * summerSnowDepthsq[ind] +
+#       bsurvIndex[5] * WPUEPred[ind] +
+#       bsurvIndex[6] * lakeIDPred[ind] +
+#       # bsurvIndex[14] * sexID[ind]+
+#       bsurvIndex[7] * summerTempPred[ind] * WPUEPred[ind] +
+#       bsurvIndex[8] * popnDensitysqPred[ind] +
+#       bsurvIndex[9] * summerSnowDepthsqPred[ind]
+# #  }
+# }
+  
+  # Model checking
+  # for(ind in 1:nInds){
+  #   # simulate new data
+  #   y_new[ind, 1:maxAge] ~ dmulti(theta[ind, 1:maxAge], harvestCount[ind])
+  #   
+  #   for(age in 1:maxAge){
+  #     g_obs[ind, age] <- y[ind, 1:age] * log(y[ind, 1:age] / (harvestCount[ind] * ey[ind, age] / sum(ey[ind, 1:maxAge])))
+  #     g_new[ind, age] <- y_new[ind, 1:age] * log(y_new[ind, 1:age] / (harvestCount[ind] * ey[ind, age] / sum(ey[ind, 1:maxAge])))
+  #     }
+  # }
+  # 
+  # compute statistc
+  #cs_obs <- 2 * sum(g_obs[1:nInds, 1:maxAge])
+  #cs_new <- 2 * sum(g_new[1:nInds, 1:maxAge])
+  #bayesPval <- step(cs_new - cs_obs )
+  # 
+  # Average survival probability
+  
+})
+
+# stagedData <- rowSums(as.matrix(dataList$ageAtHarvestData[ ,9:17])) %>%
+#   cbind(as.matrix(dataList$ageAtHarvestData[ ,4:8]), .)
+# 
+# wpue = as.numeric(scale(dataList$ageAtHarvestData$WPUE, scale = TRUE))
+#wpue[is.na(wpue)] <- 0  ##mean(wpue, na.rm = TRUE)
+# Data for model
+
+# Check covariate correlations
+# covs <- data.frame(#year = as.numeric(scale(dataList$ageAtHarvestData$year, scale = FALSE)),
+#                    forest = as.numeric(scale(dataList$ageAtHarvestData$`Coniferous forest`)),
+#                    #pastures = as.numeric(scale(dataList$ageAtHarvestData$Pastures)),
+#                    summerTemp = as.numeric(scale(dataList$ageAtHarvestData$meanSummerTemp)),
+#                    lakeID = (as.numeric(scale(dataList$ageAtHarvestData$Y))), 
+#                    #summerPrec = as.numeric(scale(dataList$ageAtHarvestData$summerPrecipitation)),
+#                    #summerSnowDepth = as.numeric(scale(dataList$ageAtHarvestData$meanWinterSnow)),
+#                    # popnDensity = as.numeric(scale(dataList$ageAtHarvestData$total_pop)),
+#                    forestsq = as.numeric((scale(dataList$ageAtHarvestData$`Coniferous forest`)))^2,
+#                    #pasturessq = as.numeric((scale(dataList$ageAtHarvestData$Pastures)))^2,
+#                    summerTempsq = as.numeric((scale(dataList$ageAtHarvestData$meanSummerTemp)))^2,
+#                    #summerTempcube = as.numeric((scale(dataList$ageAtHarvestData$meanSummerTemp)))^3,
+#                    #summerPrecsq = as.numeric((scale(dataList$ageAtHarvestData$summerPrecipitation)))^2,
+#                    #summerSnowDepthsq = as.numeric((scale(dataList$ageAtHarvestData$meanWinterSnow)))^2,
+#                    #popnDensitysq = as.numeric((scale(dataList$ageAtHarvestData$total_pop)))^2,
+#                    WPUE = wpue,
+#                    sexID = (as.factor(dataList$ageAtHarvestData$sex))
+# )
+
+#GGally::ggpairs(covs,
+#                ggplot2::aes(colour=sexID))
+
+# sort the data by year
+# dataList$ageAtHarvestData <- dataList$ageAtHarvestData%>%
+#   mutate_at(., .vars = c("meanSummerTemp", "meanWinterSnow", "forest", "popnDensity"), .funs = "scale")
+  #   ungroup()
+
+dataList$ageAtHarvestDataObs <- dataList$ageAtHarvestData %>%
+  arrange(year)%>%
+  filter(year < 2013)
+
+dataList$lengthAtAgeDataObs <- dataList$lengthAtAgeData %>%
+  arrange(year)%>%
+  filter(year < 2013)
+
+dataList$ageAtHarvestDataPred <- dataList$ageAtHarvestData %>%
+  arrange(year)%>%
+  filter(year >= 2013)
+
+dataList$lengthAtAgeDataPred <- dataList$lengthAtAgeData %>%
+  arrange(year)%>%
+  filter(year >= 2013)
+
+
+
+# Data for model
+stagedData <- rowSums(as.matrix(dataList$ageAtHarvestDataObs[ ,9:17])) %>%
+  cbind(as.matrix(dataList$ageAtHarvestDataObs[ ,4:8]), .)
+
+stagedLengthAtAge <- rowMeans(as.matrix(dataList$lengthAtAgeDataObs[ ,9: 17]), 
+                              na.rm = TRUE)%>%
+  cbind(as.matrix(dataList$lengthAtAgeDataObs[ ,4: 8]), .)
+stagedLengthAtAge[is.nan(stagedLengthAtAge)] <- NA
+
+# Extract the covariates needed
+forest <- as.numeric(scale(dataList$ageAtHarvestData$forest, scale = TRUE))
+temp <- as.numeric(scale(dataList$ageAtHarvestData$meanSummerTemp, scale = TRUE))
+year <- as.numeric(scale(dataList$ageAtHarvestData$year, scale = TRUE))
+winterSnowDepth <- as.numeric(scale(dataList$ageAtHarvestData$meanWinterSnow, scale = TRUE))
+popnDensity <- as.numeric(scale(dataList$ageAtHarvestData$popnDensity, scale = TRUE))
+wpue <- as.numeric(scale(dataList$ageAtHarvestData$WPUE, scale = TRUE))
+latitude <- as.numeric(scale(dataList$ageAtHarvestData$Y, scale = TRUE))
+#pastures <- as.numeric(scale(dataList$ageAtHarvestData$, scale = TRUE))
+
+# Number od Obs and Predictions
+nObs <- nrow(dataList$ageAtHarvestDataObs)
+nPreds <- nrow(dataList$ageAtHarvestDataPred)
+
+medLength <- apply(lengthAtAgePosteriorSummary$data, 2, median)
+
+data = list(
+  # ageAtYear = as.numeric(dataList$sprawningData$ageAtYear),
+  lengthAtAgeThisYear = lengthAtAgePosteriorSummary$data,
+  medLength = medLength,
+  #year = as.numeric(as.factor(dataList$ageAtHarvestData$year)),
+  y = as.matrix(stagedData),
+  harvestCount = rowSums(as.matrix(dataList$ageAtHarvestDataObs[4:17])),
+  forest = forest[1:nObs],
+  #pastures = as.numeric(scale(dataList$ageAtHarvestData$Pastures)),
+  summerTemp = temp[1:nObs],
+  lakeID = latitude[1:nObs], 
+  #summerPrec = as.numeric(scale(dataList$ageAtHarvestData$summerPrecipitation)),
+  summerSnowDepth = winterSnowDepth[1:nObs],
+  popnDensity = popnDensity[1:nObs],
+  forestsq = (forest[1:nObs])^2,
+  # pasturessq = as.numeric((scale(dataList$ageAtHarvestData$Pastures)))^2,
+  summerTempsq = (temp[1:nObs])^2,
+  #summerPrecsq = as.numeric((scale(dataList$ageAtHarvestData$summerPrecipitation)))^2,
+  summerSnowDepthsq = (winterSnowDepth[1:nObs])^2,
+  popnDensitysq = (popnDensity[1:nObs])^2,
+  WPUE = wpue[1:nObs],
+  year = year[1:nObs],
+  forestPred = forest[-c(1:nObs)],
+  #pastures = as.numeric(scale(dataList$ageAtHarvestData$Pastures)),
+  summerTempPred = temp[-c(1:nObs)],
+  lakeIDPred = latitude[-c(1:nObs)], 
+  #summerPrec = as.numeric(scale(dataList$ageAtHarvestData$summerPrecipitation)),
+  summerSnowDepthPred = winterSnowDepth[-c(1:nObs)],
+  popnDensityPred = popnDensity[-c(1:nObs)],
+  forestsqPred = (forest[-c(1:nObs)])^2,
+  # pasturessq = as.numeric((scale(dataList$ageAtHarvestData$Pastures)))^2,
+  summerTempsqPred = (temp[-c(1:nObs)])^2,
+  #summerPrecsq = as.numeric((scale(dataList$ageAtHarvestData$summerPrecipitation)))^2,
+  summerSnowDepthsqPred = (winterSnowDepth[-c(1:nObs)])^2,
+  popnDensitysqPred = (popnDensity[-c(1:nObs)])^2,
+  WPUEPred = wpue[-c(1:nObs)],
+  yearPred = year[-c(1:nObs)],
+  d = c(rep(1, dim(as.matrix(stagedData))[2] - 1 ), 8)
+)
+
+constants = list(
+  nInds = nObs,
+  nPreds = nPreds, 
+  sexIDObs = (as.numeric(dataList$ageAtHarvestData$sex))[1:nObs],
+  sexIDPred = (as.numeric(dataList$ageAtHarvestData$sex))[-c(1:nObs)],
+  nSex = length(unique(as.numeric(dataList$ageAtHarvestData$sex))),
+  nLakes = length(unique(as.numeric(as.factor(dataList$ageAtHarvestData$InnsjoNr)))),
+  maxAge = dim(data$y)[2]#,
+#,
+ # nYears = length(unique(as.numeric(as.factor(dataList$ageAtHarvestData$year))))
+)
+
+inits <- list(
+  psi = rep(1, 10),
+  bsurv = rnorm(10, 0, 1),
+  bsurvIndex = rnorm(10, 0, 1),
+  alpha = 0.5,
+  intercept = 1,
+  bsurvSex = rnorm(constants$nSex, 0, 1),
+  selectAlpha = 0.2,
+  bsurvAge = rnorm(constants$maxAge, 0, 1),
+  bsurvProbSex = rnorm(constants$nSex, 0, 1),
+  bsurvProbAge = runif(constants$maxAge, 0, 1),
+  #bsurvYear = rnorm(constants$nYears, 0,1),
+  sdbsurvSex = 1,
+  sdbsurvAge = 1,
+  sdbsurvYear = 1,
+  sdbsurvProbSex = 1,
+  sdbsurvProbAge = 1,
+  sdbsurvProbYear = 1,
+  survProbIntercept = 0, 
+  bsurvProbYear = 0,
+  #lambda = rep(1, constants$nYears),
+  Amat = array(0, dim = c(constants$maxAge,constants$maxAge, constants$nInds)),
+  spawnProb = 0.1,
+  theta = matrix((rep(1, constants$maxAge)/constants$maxAge), nrow = constants$nInds, ncol = constants$maxAge)
+)
+
+
+
+# nimbleModel
+fishModel <- nimbleModel(code,
+                         data = data,
+                         constants = constants,
+                         inits = inits)
+
+# compile nimbleModel
+fishModelCompiled <- compileNimble(fishModel)
+
+# check if any lambda is 0 or NA
+which(fishModelCompiled$lambda == 0)
+which(is.na(fishModelCompiled$lambda))
+
+# Configure the model
+fishModelConfigured <- configureMCMC(fishModelCompiled,
+                                     monitors = c("bsurvIndex", 
+                                                  #"bsurvLake", 
+                                                  "bsurvAge", 
+                                                  # "bsurvSex",
+                                                  "sdbsurvLake", 
+                                                  "sdbsurvAge",  
+                                                  "sdbsurvSex",
+                                                  "lambdaInd", 
+                                                 #"lambdaPred",
+                                                  "bsurvProbSex",
+                                                  "bsurvProbAge",
+                                                  "survProbIntercept",
+                                                  "bsurvProbYear",
+                                                  "survivalProb",
+                                                  "selectAlpha", 
+                                                  "psi"#,
+                                                  #"bayesPval"
+                                     )
+)
+
+# 
+configureRJ(fishModelConfigured,
+            targetNodes = c("bsurv"),
+            indicatorNodes = 'psi',
+            control = list(mean = 0, scale = 0.5))
+#
+fishModelConfigured$printSamplers()
+
+# Build and run model
+fishModelBuilt <- buildMCMC(fishModelConfigured)
+
+# compile built model
+fishModelCompiled2 <- compileNimble(fishModelBuilt,
+                                    project = fishModelCompiled)
+
+
+#run MCMC
+fishModelMCMCrun <- runMCMC(fishModelCompiled2,
+                            niter = 30000,
+                            nchains = 2,
+                            nburnin = 20000,
+                            thin = 2,
+                            setSeed = TRUE,
+                            samples = TRUE,
+                            samplesAsCodaMCMC = TRUE,
+                            summary = TRUE,
+                            WAIC = FALSE) 
+
+#check summary
+fishModelMCMCrun$summary$all.chains[grepl("bsurvProbAge", rownames(fishModelMCMCrun$summary$all.chains)), ]
+fishModelMCMCrun$summary$all.chains[grepl("lambdaPred", rownames(fishModelMCMCrun$summary$all.chains)), ]
+fishModelMCMCrun$summary$all.chains[grepl("bsurv", rownames(fishModelMCMCrun$summary$all.chains)), ]
+fishModelMCMCrun$summary$all.chains[grepl("lambda", rownames(fishModelMCMCrun$summary$all.chains)), ]
+
+save(fishModelMCMCrun, file = "result/fishData/fittedModelWithOverdispersion.RData")
+
+# currently the model runs. Will have to think about the model structure in details.

@@ -1,0 +1,2 @@
+"0","namesInterested <- unique(bsurvSamples$Parameter)[1:5]"
+"0","ggmcmc::ggs_traceplot(bsurvSamples[bsurvSamples$Parameter %in% namesInterested, ])"
