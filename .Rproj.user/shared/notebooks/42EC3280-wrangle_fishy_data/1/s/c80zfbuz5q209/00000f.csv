@@ -1,5 +1,0 @@
-"0","read.table(""innlandsfisk.txt"", header = TRUE, sep = "";"", dec = ""."")
-"
-"2","Warning: cannot open file 'innlandsfisk.txt': No such file or directory"
-"2","Error in file(file, ""rt"") : cannot open the connection
-"
